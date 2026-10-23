@@ -47,6 +47,14 @@ class SessionManager: ObservableObject {
         return defaults.string(forKey: tokenKey)
     }
 
+    func getUser() -> User? {
+        return currentUser
+    }
+
+    func saveAuth(token: String, user: User?) {
+        saveSession(token: token, user: user)
+    }
+
     func logout() {
         defaults.removeObject(forKey: tokenKey)
         defaults.removeObject(forKey: userKey)

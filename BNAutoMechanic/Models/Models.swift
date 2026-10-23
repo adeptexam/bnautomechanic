@@ -208,6 +208,83 @@ struct User: Codable, Identifiable {
         case updatedAt = "updated_at"
     }
 
+    init(
+        id: Int,
+        name: String,
+        email: String,
+        phone: String? = nil,
+        role: String? = "CUSTOMER",
+        avatarUrl: String? = nil,
+        address: String? = nil,
+        city: String? = nil,
+        status: String? = "ACTIVE",
+        emailVerified: Bool? = false,
+        altPhone: String? = nil,
+        dateOfBirth: String? = nil,
+        gender: String? = nil,
+        state: String? = nil,
+        postalCode: String? = nil,
+        country: String? = nil,
+        companyName: String? = nil,
+        taxId: String? = nil,
+        preferredContact: String? = nil,
+        bio: String? = nil,
+        showOnAbout: Bool? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.email = email
+        self.phone = phone
+        self.role = role
+        self.avatarUrl = avatarUrl
+        self.address = address
+        self.city = city
+        self.status = status
+        self.emailVerified = emailVerified
+        self.altPhone = altPhone
+        self.dateOfBirth = dateOfBirth
+        self.gender = gender
+        self.state = state
+        self.postalCode = postalCode
+        self.country = country
+        self.companyName = companyName
+        self.taxId = taxId
+        self.preferredContact = preferredContact
+        self.bio = bio
+        self.showOnAbout = showOnAbout
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    init(
+        id: Int,
+        name: String,
+        email: String,
+        phone: String?,
+        address: String?,
+        city: String?,
+        role: String?,
+        status: String?,
+        emailVerified: Bool?,
+        createdAt: String?
+    ) {
+        self.init(
+            id: id,
+            name: name,
+            email: email,
+            phone: phone,
+            role: role,
+            avatarUrl: nil,
+            address: address,
+            city: city,
+            status: status,
+            emailVerified: emailVerified,
+            createdAt: createdAt
+        )
+    }
+
     func initials() -> String {
         let parts = name.trimmingCharacters(in: .whitespaces).split(separator: " ").map(String.init)
         if parts.count >= 2 {
@@ -1000,6 +1077,30 @@ struct ChatMessage: Codable, Identifiable {
         case readAt = "read_at"
         case createdAt = "created_at"
     }
+
+    init(
+        id: Int,
+        roomId: Int? = nil,
+        senderId: Int? = nil,
+        senderName: String? = nil,
+        senderRole: String? = nil,
+        guest: Bool? = nil,
+        body: String,
+        attachmentUrl: String? = nil,
+        readAt: String? = nil,
+        createdAt: String? = nil
+    ) {
+        self.id = id
+        self.roomId = roomId
+        self.senderId = senderId
+        self.senderName = senderName
+        self.senderRole = senderRole
+        self.guest = guest
+        self.body = body
+        self.attachmentUrl = attachmentUrl
+        self.readAt = readAt
+        self.createdAt = createdAt
+    }
 }
 
 struct SendMessageRequest: Codable {
@@ -1072,6 +1173,50 @@ struct AppNotification: Codable, Identifiable {
         try container.encode(read, forKey: .read)
         try container.encodeIfPresent(readAt, forKey: .readAt)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
+    }
+
+    init(
+        id: Int,
+        userId: Int? = nil,
+        type: String? = nil,
+        title: String,
+        message: String,
+        link: String? = nil,
+        read: Bool = false,
+        readAt: String? = nil,
+        createdAt: String? = nil
+    ) {
+        self.id = id
+        self.userId = userId
+        self.type = type
+        self.title = title
+        self.message = message
+        self.link = link
+        self.read = read
+        self.readAt = readAt
+        self.createdAt = createdAt
+    }
+
+    init(
+        id: Int,
+        userId: Int?,
+        title: String,
+        message: String,
+        type: String?,
+        read: Bool,
+        createdAt: String?
+    ) {
+        self.init(
+            id: id,
+            userId: userId,
+            type: type,
+            title: title,
+            message: message,
+            link: nil,
+            read: read,
+            readAt: nil,
+            createdAt: createdAt
+        )
     }
 }
 

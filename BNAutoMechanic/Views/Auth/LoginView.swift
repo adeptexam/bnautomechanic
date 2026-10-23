@@ -160,9 +160,11 @@ struct LoginView: View {
                 let response = try await APIService.shared.login(email: trimmedEmail, password: password)
                 if let authData = response.data, let token = authData.effectiveToken() {
                     let user = authData.user ?? User(
-                        id: 0, name: trimmedEmail.components(separatedBy: "@").first?.replacingOccurrences(of: ".", with: " ").capitalized ?? "User",
-                        email: trimmedEmail, phone: nil, address: nil, city: nil,
-                        role: "CUSTOMER", status: "ACTIVE", emailVerified: false, createdAt: nil
+                        id: 0,
+                        name: trimmedEmail.components(separatedBy: "@").first?.replacingOccurrences(of: ".", with: " ").capitalized ?? "User",
+                        email: trimmedEmail,
+                        role: "CUSTOMER",
+                        status: "ACTIVE"
                     )
                     session.saveAuth(token: token, user: user)
                 } else {
@@ -331,9 +333,12 @@ struct RegisterView: View {
                 )
                 if let authData = response.data, let token = authData.effectiveToken() {
                     let user = authData.user ?? User(
-                        id: 0, name: name, email: email, phone: phone.isEmpty ? nil : phone,
-                        address: nil, city: nil, role: "CUSTOMER", status: "ACTIVE",
-                        emailVerified: false, createdAt: nil
+                        id: 0,
+                        name: name,
+                        email: email,
+                        phone: phone.isEmpty ? nil : phone,
+                        role: "CUSTOMER",
+                        status: "ACTIVE"
                     )
                     session.saveAuth(token: token, user: user)
                 } else {

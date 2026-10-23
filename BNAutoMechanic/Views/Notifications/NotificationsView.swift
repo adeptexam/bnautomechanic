@@ -172,15 +172,7 @@ struct NotificationsView: View {
     private func markAsRead(_ notif: AppNotification) {
         if notif.read == true { return }
         if let idx = notifications.firstIndex(where: { $0.id == notif.id }) {
-            notifications[idx] = AppNotification(
-                id: notif.id,
-                userId: notif.userId,
-                title: notif.title,
-                message: notif.message,
-                type: notif.type,
-                read: true,
-                createdAt: notif.createdAt
-            )
+            notifications[idx].read = true
         }
         Task {
             _ = try? await APIService.shared.markNotificationRead(id: notif.id)
@@ -188,16 +180,8 @@ struct NotificationsView: View {
     }
 
     private func markAllAsRead() {
-        notifications = notifications.map {
-            AppNotification(
-                id: $0.id,
-                userId: $0.userId,
-                title: $0.title,
-                message: $0.message,
-                type: $0.type,
-                read: true,
-                createdAt: $0.createdAt
-            )
+        for idx in notifications.indices {
+            notifications[idx].read = true
         }
         Task {
             _ = try? await APIService.shared.markAllNotificationsRead()
