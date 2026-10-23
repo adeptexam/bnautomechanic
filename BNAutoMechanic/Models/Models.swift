@@ -90,6 +90,16 @@ struct ApiResponse<T: Codable>: Codable {
     init(from directData: T) {
         self.init(success: true, data: directData, message: nil, code: nil)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(success, forKey: .success)
+        try container.encodeIfPresent(data, forKey: .data)
+        try container.encodeIfPresent(message, forKey: .message)
+        try container.encodeIfPresent(code, forKey: .code)
+        try container.encodeIfPresent(error, forKey: .error)
+        try container.encodeIfPresent(meta, forKey: .meta)
+    }
 }
 
 // MARK: - Paginated List Container
@@ -496,6 +506,34 @@ struct Service: Codable, Identifiable {
         tags = try? container.decode([String].self, forKey: .tags)
     }
 
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(categoryId, forKey: .categoryId)
+        try container.encodeIfPresent(slug, forKey: .slug)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encodeIfPresent(shortDescription, forKey: .shortDescription)
+        try container.encodeIfPresent(imageUrl, forKey: .imageUrl)
+        try container.encodeIfPresent(basePrice, forKey: .basePrice)
+        try container.encodeIfPresent(salePrice, forKey: .salePrice)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(featured, forKey: .featured)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(displayOrder, forKey: .displayOrder)
+        try container.encodeIfPresent(includedItems, forKey: .includedItems)
+        try container.encodeIfPresent(warrantyInfo, forKey: .warrantyInfo)
+        try container.encodeIfPresent(benefits, forKey: .benefits)
+        try container.encodeIfPresent(faqs, forKey: .faqs)
+        try container.encodeIfPresent(ratingAverage, forKey: .ratingAverage)
+        try container.encodeIfPresent(reviewsCount, forKey: .reviewsCount)
+        try container.encodeIfPresent(features, forKey: .features)
+        try container.encodeIfPresent(tags, forKey: .tags)
+        try container.encodeIfPresent(category, forKey: .category)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+    }
+
     func formattedDuration() -> String {
         guard let mins = durationMinutes else { return "Flexible" }
         if mins < 60 { return "\(mins)m" }
@@ -556,6 +594,17 @@ struct BookingService: Codable, Identifiable {
 
         let sName = (try? container.decode(String.self, forKey: .serviceName)) ?? (try? container.decode(String.self, forKey: .name))
         serviceName = sName ?? "Vehicle Service"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(bookingId, forKey: .bookingId)
+        try container.encodeIfPresent(serviceId, forKey: .serviceId)
+        try container.encode(serviceName, forKey: .serviceName)
+        try container.encodeIfPresent(quantity, forKey: .quantity)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(price, forKey: .price)
     }
 }
 
@@ -759,6 +808,40 @@ struct Booking: Codable, Identifiable {
         } else {
             coupon = nil
         }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(reference, forKey: .reference)
+        try container.encode(status, forKey: .status)
+        try container.encodeIfPresent(userId, forKey: .userId)
+        try container.encodeIfPresent(vehicleId, forKey: .vehicleId)
+        try container.encodeIfPresent(mechanicId, forKey: .mechanicId)
+        try container.encode(scheduledDate, forKey: .scheduledDate)
+        try container.encode(scheduledTime, forKey: .scheduledTime)
+        try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(totalAmount, forKey: .totalAmount)
+        try container.encodeIfPresent(paymentStatus, forKey: .paymentStatus)
+        try container.encodeIfPresent(amountPaid, forKey: .amountPaid)
+        try container.encodeIfPresent(balanceDue, forKey: .balanceDue)
+        try container.encodeIfPresent(customerName, forKey: .customerName)
+        try container.encodeIfPresent(customerEmail, forKey: .customerEmail)
+        try container.encodeIfPresent(customerPhone, forKey: .customerPhone)
+        try container.encodeIfPresent(invoiceId, forKey: .invoiceId)
+        try container.encodeIfPresent(declineReason, forKey: .declineReason)
+        try container.encodeIfPresent(cancelReason, forKey: .cancelReason)
+        try container.encodeIfPresent(startedAt, forKey: .startedAt)
+        try container.encodeIfPresent(completedAt, forKey: .completedAt)
+        try container.encodeIfPresent(adminNotes, forKey: .adminNotes)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+        try container.encodeIfPresent(services, forKey: .services)
+        try container.encodeIfPresent(vehicle, forKey: .vehicle)
+        try container.encodeIfPresent(towing, forKey: .towing)
+        try container.encodeIfPresent(estimate, forKey: .estimate)
+        try container.encodeIfPresent(extras, forKey: .extras)
+        try container.encodeIfPresent(coupon, forKey: .coupon)
     }
 
     func servicesSummary() -> String {
@@ -977,6 +1060,19 @@ struct AppNotification: Codable, Identifiable {
             read = false
         }
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(userId, forKey: .userId)
+        try container.encodeIfPresent(type, forKey: .type)
+        try container.encode(title, forKey: .title)
+        try container.encode(message, forKey: .message)
+        try container.encodeIfPresent(link, forKey: .link)
+        try container.encode(read, forKey: .read)
+        try container.encodeIfPresent(readAt, forKey: .readAt)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+    }
 }
 
 struct UnreadCount: Codable {
@@ -1065,6 +1161,31 @@ struct Invoice: Codable, Identifiable {
         } else {
             items = nil
             itemsRaw = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(invoiceNumber, forKey: .invoiceNumber)
+        try container.encodeIfPresent(userId, forKey: .userId)
+        try container.encodeIfPresent(vehicleId, forKey: .vehicleId)
+        try container.encodeIfPresent(bookingId, forKey: .bookingId)
+        try container.encodeIfPresent(bookingReference, forKey: .bookingReference)
+        try container.encodeIfPresent(subtotal, forKey: .subtotal)
+        try container.encodeIfPresent(discount, forKey: .discount)
+        try container.encodeIfPresent(tax, forKey: .tax)
+        try container.encodeIfPresent(total, forKey: .total)
+        try container.encodeIfPresent(amountPaid, forKey: .amountPaid)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(issuedAt, forKey: .issuedAt)
+        try container.encodeIfPresent(dueDate, forKey: .dueDate)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+        if let directItems = items {
+            try container.encode(directItems, forKey: .items)
+        } else if let raw = itemsRaw {
+            try container.encode(raw, forKey: .items)
         }
     }
 }
@@ -1213,6 +1334,29 @@ struct Review: Codable, Identifiable {
             editedLocally = nil
         }
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(bookingId, forKey: .bookingId)
+        try container.encodeIfPresent(serviceId, forKey: .serviceId)
+        try container.encodeIfPresent(serviceName, forKey: .serviceName)
+        try container.encodeIfPresent(userId, forKey: .userId)
+        try container.encodeIfPresent(customerName, forKey: .customerName)
+        try container.encodeIfPresent(customerAvatarUrl, forKey: .customerAvatarUrl)
+        try container.encode(rating, forKey: .rating)
+        try container.encodeIfPresent(comment, forKey: .comment)
+        try container.encodeIfPresent(status, forKey: .status)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+        try container.encodeIfPresent(source, forKey: .source)
+        try container.encodeIfPresent(googleReviewId, forKey: .googleReviewId)
+        try container.encodeIfPresent(reviewDate, forKey: .reviewDate)
+        try container.encodeIfPresent(editedLocally, forKey: .editedLocally)
+        try container.encodeIfPresent(verifiedCustomer, forKey: .verifiedCustomer)
+        try container.encodeIfPresent(bookingReference, forKey: .bookingReference)
+        try container.encodeIfPresent(response, forKey: .response)
+    }
 }
 
 struct ReviewSummary: Codable {
@@ -1329,6 +1473,14 @@ struct MechanicTimeOff: Codable, Identifiable {
         status = try? container.decode(String.self, forKey: .status)
         startDate = (try? container.decode(String.self, forKey: .startDate)) ?? (try? container.decode(String.self, forKey: .start))
         endDate = (try? container.decode(String.self, forKey: .endDate)) ?? (try? container.decode(String.self, forKey: .end))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(startDate, forKey: .startDate)
+        try container.encodeIfPresent(endDate, forKey: .endDate)
+        try container.encodeIfPresent(reason, forKey: .reason)
+        try container.encodeIfPresent(status, forKey: .status)
     }
 }
 
@@ -1603,6 +1755,38 @@ struct PublicSettings: Codable {
             maintenanceMode = i == 1
         } else {
             maintenanceMode = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(siteName, forKey: .siteName)
+        try container.encodeIfPresent(tagline, forKey: .tagline)
+        try container.encodeIfPresent(logoUrl, forKey: .logoUrl)
+        try container.encodeIfPresent(phone, forKey: .phone)
+        try container.encodeIfPresent(secondaryPhone, forKey: .secondaryPhone)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encodeIfPresent(address, forKey: .address)
+        try container.encodeIfPresent(mapUrl, forKey: .mapUrl)
+        try container.encodeIfPresent(directionsUrl, forKey: .directionsUrl)
+        try container.encodeIfPresent(social, forKey: .social)
+        try container.encodeIfPresent(currency, forKey: .currency)
+        try container.encodeIfPresent(currencySymbol, forKey: .currencySymbol)
+        try container.encodeIfPresent(taxRate, forKey: .taxRate)
+        try container.encodeIfPresent(googleRating, forKey: .googleRating)
+        try container.encodeIfPresent(googleReviewCount, forKey: .googleReviewCount)
+        try container.encodeIfPresent(heroImageUrl, forKey: .heroImageUrl)
+        try container.encodeIfPresent(bookingStepsImageUrl, forKey: .bookingStepsImageUrl)
+        try container.encodeIfPresent(aboutImageUrl, forKey: .aboutImageUrl)
+        try container.encodeIfPresent(maintenanceMessage, forKey: .maintenanceMessage)
+        try container.encodeIfPresent(maintenanceUntil, forKey: .maintenanceUntil)
+        try container.encodeIfPresent(onlinePaymentEnabled, forKey: .onlinePaymentEnabled)
+        try container.encodeIfPresent(maintenanceMode, forKey: .maintenanceMode)
+        if let list = openingHoursList {
+            try container.encode(list, forKey: .openingHours)
+        } else if let raw = openingHoursRaw {
+            try container.encode(raw, forKey: .openingHours)
         }
     }
 
