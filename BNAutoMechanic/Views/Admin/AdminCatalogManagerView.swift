@@ -278,7 +278,7 @@ struct AdminCatalogManagerView: View {
                         Spacer()
 
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text(String(format: "$%.2f", svc.effectivePrice()))
+                            Text(String(format: "$%.2f", svc.effectivePrice))
                                 .font(.system(size: 15, weight: .black))
                                 .foregroundColor(.primaryGold)
 
@@ -571,12 +571,14 @@ struct AddOrEditServiceSheet: View {
                 if let s = service {
                     name = s.name
                     categoryId = s.category?.id ?? 1
-                    price = "\(s.price)"
-                    if let sp = s.salePrice { salePrice = "\(sp)" }
-                    durationMinutes = "\(s.durationMinutes)"
+                    if let bp = s.basePrice ?? s.price {
+                        price = String(format: "%.2f", bp)
+                    }
+                    if let sp = s.salePrice { salePrice = String(format: "%.2f", sp) }
+                    durationMinutes = "\(s.durationMinutes ?? 60)"
                     featured = s.featured ?? false
                     description = s.description ?? s.shortDescription ?? ""
-                    includedItems = s.includedItems ?? ""
+                    includedItems = s.includedItems?.joined(separator: ", ") ?? ""
                     warrantyInfo = s.warrantyInfo ?? "12 Months / 12,000 Miles"
                 } else if let firstCat = categories.first {
                     categoryId = firstCat.id

@@ -262,12 +262,13 @@ struct AdminFinancialsView: View {
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.textForeground)
                             Spacer()
-                            Text(inv.status.uppercased())
+                            let statusText = (inv.status ?? "PENDING").uppercased()
+                            Text(statusText)
                                 .font(.system(size: 9, weight: .black))
-                                .foregroundColor(inv.status.uppercased() == "PAID" ? .statusConfirmed : .primaryGold)
+                                .foregroundColor(statusText == "PAID" ? .statusConfirmed : .primaryGold)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(inv.status.uppercased() == "PAID" ? Color.statusConfirmed.opacity(0.14) : Color.primaryGold.opacity(0.14))
+                                .background(statusText == "PAID" ? Color.statusConfirmed.opacity(0.14) : Color.primaryGold.opacity(0.14))
                                 .cornerRadius(4)
                         }
 

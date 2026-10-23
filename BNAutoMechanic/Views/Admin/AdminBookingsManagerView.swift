@@ -456,7 +456,11 @@ struct AdminBookingDetailSheet: View {
     private let statusOptions = ["PENDING", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
 
     private var calculatedSubtotal: Double {
-        estimateItems.reduce(0) { $0 + ($1.unitPrice * $1.quantity) }
+        var sum: Double = 0.0
+        for item in estimateItems {
+            sum += item.unitPrice * item.quantity
+        }
+        return sum
     }
 
     private var calculatedTax: Double {
@@ -1038,7 +1042,7 @@ struct AdminCreateBookingSheet: View {
                                 Text(svc.name)
                                     .foregroundColor(.textForeground)
                                 Spacer()
-                                Text(String(format: "$%.2f", svc.effectivePrice()))
+                                Text(String(format: "$%.2f", svc.effectivePrice))
                                     .foregroundColor(.primaryGold)
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                     .foregroundColor(isSelected ? .primaryGold : .textSubtle)
@@ -1099,7 +1103,8 @@ struct AdminCreateBookingSheet: View {
             vehicle: vehicleReq,
             scheduledDate: dateString,
             scheduledTime: scheduledTime,
-            notes: notes
+            notes: notes.isEmpty ? nil : notes,
+            couponCode: nil
         )
 
         do {
