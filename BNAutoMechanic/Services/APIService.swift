@@ -21,12 +21,32 @@ class SessionManager: ObservableObject {
 
     @Published var isLoggedIn: Bool = false
     @Published var currentUser: User? = nil
+    @Published var activePortalMode: PortalMode = .customer
 
     private init() {
         self.isLoggedIn = defaults.bool(forKey: loggedInKey)
         if let userData = defaults.data(forKey: userKey),
            let user = try? JSONDecoder().decode(User.self, from: userData) {
             self.currentUser = user
+            self.activePortalMode = Self.resolvePortalMode(for: user)
+        }
+    }
+
+    private static func resolvePortalMode(for user: User?) -> PortalMode {
+        guard let u = user else { return .customer }
+        if u.isSuperAdmin { return .superadmin }
+        if u.isAdmin { return .admin }
+        if u.isMechanic { return .technician }
+        return .customer
+    }
+
+    func syncPortalMode() {
+        self.activePortalMode = Self.resolvePortalMode(for: currentUser)
+    }
+
+    func setPortalMode(_ mode: PortalMode) {
+        withAnimation {
+            self.activePortalMode = mode
         }
     }
 
@@ -40,6 +60,7 @@ class SessionManager: ObservableObject {
         DispatchQueue.main.async {
             self.isLoggedIn = true
             self.currentUser = user
+            self.syncPortalMode()
         }
     }
 
@@ -62,6 +83,7 @@ class SessionManager: ObservableObject {
         DispatchQueue.main.async {
             self.isLoggedIn = false
             self.currentUser = nil
+            self.activePortalMode = .customer
         }
     }
 }
@@ -423,6 +445,349 @@ class APIService {
     // MARK: - Platform Settings (settings table)
     func getSettings() async throws -> ApiResponse<PublicSettings> {
         return try await makeRequest(endpoint: "settings")
+    }
+
+    // MARK: - Generic Raw Request for Dynamic Admin Operations
+    private func makeRequestRaw<T: Codable>(
+        endpoint: String,
+        method: String = "GET",
+        jsonBody: [String: Any]? = nil,
+        queryParams: [String: String]? = nil
+    ) async throws -> ApiResponse<T> {
+        var urlString = baseURL + endpoint
+
+        if let params = queryParams, !params.isEmpty {
+            if var components = URLComponents(string: urlString) {
+                var queryItems = components.queryItems ?? []
+                for (key, value) in params {
+                    queryItems.append(URLQueryItem(name: key, value: value))
+                }
+                components.queryItems = queryItems
+                if let resolvedUrl = components.url?.absoluteString {
+                    urlString = resolvedUrl
+                }
+            }
+        }
+
+        guard let url = URL(string: urlString) else {
+            throw APIError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15
+
+        if let token = SessionManager.shared.getToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        if let jsonBody = jsonBody {
+            request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
+        }
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+
+        if let apiResponse = try? decoder.decode(ApiResponse<T>.self, from: data) {
+            if httpResponse.statusCode >= 400 && apiResponse.success != true {
+                let errMessage = apiResponse.message ?? "Server request failed (\(httpResponse.statusCode))"
+                throw APIError.serverMessage(errMessage)
+            }
+            return apiResponse
+        }
+
+        if let directData = try? decoder.decode(T.self, from: data) {
+            return ApiResponse<T>(from: directData)
+        }
+
+        if let errObj = try? decoder.decode(ApiErrorResponse.self, from: data) {
+            let msg = errObj.error?.message ?? errObj.message ?? "Server returned error (\(httpResponse.statusCode))"
+            throw APIError.serverMessage(msg)
+        }
+
+        if !(200...299).contains(httpResponse.statusCode) {
+            throw APIError.serverError(httpResponse.statusCode)
+        }
+
+        throw APIError.decodingError("Unable to parse response data")
+    }
+
+    // MARK: - Admin Statistics (/admin/stats)
+    func getAdminStats() async throws -> ApiResponse<AdminStats> {
+        return try await makeRequest(endpoint: "admin/stats")
+    }
+
+    // MARK: - Admin Bookings Management (CRUD, Status, Estimates, Extras, Dispatch)
+    func getAdminBookings(
+        page: Int = 1,
+        perPage: Int = 50,
+        status: String? = nil,
+        search: String? = nil,
+        sort: String? = "scheduled_date",
+        order: String? = "desc"
+    ) async throws -> ApiResponse<Paginated<Booking>> {
+        var params: [String: String] = [
+            "page": "\(page)",
+            "per_page": "\(perPage)"
+        ]
+        if let s = status, !s.isEmpty, s.uppercased() != "ALL" { params["status"] = s }
+        if let q = search, !q.isEmpty { params["search"] = q }
+        if let sort = sort { params["sort"] = sort }
+        if let order = order { params["order"] = order }
+        return try await makeRequest(endpoint: "admin/bookings", queryParams: params)
+    }
+
+    func getAdminBookingDetail(id: Int) async throws -> ApiResponse<Booking> {
+        return try await makeRequest(endpoint: "admin/bookings/\(id)")
+    }
+
+    func updateAdminBookingStatus(id: Int, status: String, notes: String? = nil) async throws -> ApiResponse<Booking> {
+        var body: [String: Any] = ["status": status]
+        if let n = notes { body["notes"] = n }
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(id)/status", method: "PUT", jsonBody: body)
+    }
+
+    func saveAdminEstimate(id: Int, items: [[String: Any]], discount: Double = 0.0, taxRate: Double = 0.0, notes: String = "") async throws -> ApiResponse<Booking> {
+        let body: [String: Any] = [
+            "items": items,
+            "discount": discount,
+            "tax_rate": taxRate,
+            "notes": notes
+        ]
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(id)/estimate", method: "PUT", jsonBody: body)
+    }
+
+    func sendAdminEstimate(id: Int) async throws -> ApiResponse<Booking> {
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(id)/estimate/send", method: "POST")
+    }
+
+    func approveAdminEstimateOnBehalf(id: Int, note: String = "Approved by staff on behalf of customer") async throws -> ApiResponse<Booking> {
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(id)/estimate/approve", method: "POST", jsonBody: ["note": note])
+    }
+
+    func assignMechanicToBooking(id: Int, mechanicId: Int?, mechanicIds: [Int]? = nil) async throws -> ApiResponse<Booking> {
+        var body: [String: Any] = [:]
+        if let m = mechanicId { body["mechanic_id"] = m }
+        if let ms = mechanicIds { body["mechanic_ids"] = ms }
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(id)/assign", method: "POST", jsonBody: body)
+    }
+
+    func addBookingExtra(bookingId: Int, name: String, price: Double, notes: String? = nil) async throws -> ApiResponse<Booking> {
+        var body: [String: Any] = ["name": name, "price": price]
+        if let n = notes { body["notes"] = n }
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(bookingId)/extras", method: "POST", jsonBody: body)
+    }
+
+    func deleteBookingExtra(bookingId: Int, extraId: Int) async throws -> ApiResponse<Booking> {
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(bookingId)/extras/\(extraId)", method: "DELETE")
+    }
+
+    func confirmBookingExtra(bookingId: Int, extraId: Int) async throws -> ApiResponse<Booking> {
+        return try await makeRequestRaw(endpoint: "admin/bookings/\(bookingId)/extras/\(extraId)/confirm", method: "POST")
+    }
+
+    func deleteAdminBooking(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/bookings/\(id)", method: "DELETE")
+    }
+
+    // MARK: - Admin Mechanics & Staff Dispatcher (CRUD)
+    func getAdminMechanics() async throws -> ApiResponse<Paginated<Mechanic>> {
+        return try await makeRequest(endpoint: "admin/mechanics", queryParams: ["per_page": "100"])
+    }
+
+    func createAdminMechanic(_ request: CreateMechanicRequest) async throws -> ApiResponse<Mechanic> {
+        return try await makeRequest(endpoint: "admin/mechanics", method: "POST", body: request)
+    }
+
+    func updateAdminMechanic(id: Int, data: [String: Any]) async throws -> ApiResponse<Mechanic> {
+        return try await makeRequestRaw(endpoint: "admin/mechanics/\(id)", method: "PUT", jsonBody: data)
+    }
+
+    func deleteAdminMechanic(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/mechanics/\(id)", method: "DELETE")
+    }
+
+    func getAdminStaff() async throws -> ApiResponse<[StaffMember]> {
+        return try await makeRequest(endpoint: "admin/staff")
+    }
+
+    func createAdminStaff(_ request: CreateStaffRequest) async throws -> ApiResponse<StaffMember> {
+        return try await makeRequest(endpoint: "admin/staff", method: "POST", body: request)
+    }
+
+    func deleteAdminStaff(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/staff/\(id)", method: "DELETE")
+    }
+
+    // MARK: - Admin Catalog: Services, Categories, Brands (CRUD)
+    func createService(_ request: CreateServiceRequest) async throws -> ApiResponse<Service> {
+        return try await makeRequest(endpoint: "admin/services", method: "POST", body: request)
+    }
+
+    func updateService(id: Int, data: [String: Any]) async throws -> ApiResponse<Service> {
+        return try await makeRequestRaw(endpoint: "admin/services/\(id)", method: "PUT", jsonBody: data)
+    }
+
+    func deleteService(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/services/\(id)", method: "DELETE")
+    }
+
+    func createCategory(_ request: CreateCategoryRequest) async throws -> ApiResponse<ServiceCategory> {
+        return try await makeRequest(endpoint: "admin/categories", method: "POST", body: request)
+    }
+
+    func updateCategory(id: Int, data: [String: Any]) async throws -> ApiResponse<ServiceCategory> {
+        return try await makeRequestRaw(endpoint: "admin/categories/\(id)", method: "PUT", jsonBody: data)
+    }
+
+    func deleteCategory(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/categories/\(id)", method: "DELETE")
+    }
+
+    func createBrand(_ request: CreateBrandRequest) async throws -> ApiResponse<Brand> {
+        return try await makeRequest(endpoint: "admin/brands", method: "POST", body: request)
+    }
+
+    func deleteBrand(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/brands/\(id)", method: "DELETE")
+    }
+
+    // MARK: - Admin Users & Roles (CRUD)
+    func getAdminUsers(page: Int = 1, perPage: Int = 50, role: String? = nil, search: String? = nil) async throws -> ApiResponse<Paginated<User>> {
+        var params: [String: String] = ["page": "\(page)", "per_page": "\(perPage)"]
+        if let r = role, !r.isEmpty, r.uppercased() != "ALL" { params["role"] = r }
+        if let q = search, !q.isEmpty { params["search"] = q }
+        return try await makeRequest(endpoint: "admin/users", queryParams: params)
+    }
+
+    func updateUserRole(userId: Int, role: String) async throws -> ApiResponse<User> {
+        let body: [String: Any] = ["role": role]
+        return try await makeRequestRaw(endpoint: "admin/users/\(userId)", method: "PUT", jsonBody: body)
+    }
+
+    func deleteUser(userId: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/users/\(userId)", method: "DELETE")
+    }
+
+    // MARK: - Master Administrative Controls & Settings (CRUD)
+    func getAdminSettings() async throws -> ApiResponse<PublicSettings> {
+        return try await makeRequest(endpoint: "admin/settings")
+    }
+
+    func updateAdminSettings(_ request: UpdateSettingsRequest) async throws -> ApiResponse<PublicSettings> {
+        return try await makeRequest(endpoint: "admin/settings", method: "PUT", body: request)
+    }
+
+    func getPaymentSettings() async throws -> ApiResponse<PaymentSettings> {
+        return try await makeRequest(endpoint: "admin/payment-settings")
+    }
+
+    func updatePaymentSettings(_ settings: PaymentSettings) async throws -> ApiResponse<PaymentSettings> {
+        return try await makeRequest(endpoint: "admin/payment-settings", method: "PUT", body: settings)
+    }
+
+    // MARK: - Deals & Coupons (CRUD)
+    func createDeal(_ request: CreateDealRequest) async throws -> ApiResponse<Deal> {
+        return try await makeRequest(endpoint: "admin/deals", method: "POST", body: request)
+    }
+
+    func deleteDeal(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/deals/\(id)", method: "DELETE")
+    }
+
+    func testDealCoupon(code: String, amount: Double = 100.0) async throws -> ApiResponse<AppliedCoupon> {
+        let body: [String: Any] = ["code": code, "amount": amount]
+        return try await makeRequestRaw(endpoint: "admin/deals/test", method: "POST", jsonBody: body)
+    }
+
+    // MARK: - Invoices, Payments & Cash Reports (CRUD)
+    func getAdminInvoices(page: Int = 1, perPage: Int = 50, status: String? = nil) async throws -> ApiResponse<Paginated<Invoice>> {
+        var params: [String: String] = ["page": "\(page)", "per_page": "\(perPage)"]
+        if let s = status, !s.isEmpty, s.uppercased() != "ALL" { params["status"] = s }
+        return try await makeRequest(endpoint: "admin/invoices", queryParams: params)
+    }
+
+    func createInvoice(_ request: CreateInvoiceRequest) async throws -> ApiResponse<Invoice> {
+        return try await makeRequest(endpoint: "admin/invoices", method: "POST", body: request)
+    }
+
+    func deleteInvoice(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/invoices/\(id)", method: "DELETE")
+    }
+
+    func refundPayment(paymentId: Int, reason: String) async throws -> ApiResponse<Payment> {
+        let body: [String: Any] = ["reason": reason]
+        return try await makeRequestRaw(endpoint: "admin/payments/\(paymentId)/refund", method: "POST", jsonBody: body)
+    }
+
+    func getCashReport(date: String? = nil) async throws -> ApiResponse<CashReport> {
+        var params: [String: String]? = nil
+        if let d = date { params = ["date": d] }
+        return try await makeRequest(endpoint: "admin/reports/cash", queryParams: params)
+    }
+
+    // MARK: - Reviews Moderation (CRUD)
+    func getAdminReviews(page: Int = 1, perPage: Int = 50) async throws -> ApiResponse<Paginated<Review>> {
+        let params: [String: String] = ["page": "\(page)", "per_page": "\(perPage)"]
+        return try await makeRequest(endpoint: "admin/reviews", queryParams: params)
+    }
+
+    func replyAdminReview(id: Int, response: String) async throws -> ApiResponse<Review> {
+        let body: [String: Any] = ["response": response]
+        return try await makeRequestRaw(endpoint: "admin/reviews/\(id)", method: "PUT", jsonBody: body)
+    }
+
+    func deleteAdminReview(id: Int) async throws -> ApiResponse<EmptyData> {
+        return try await makeRequest(endpoint: "admin/reviews/\(id)", method: "DELETE")
+    }
+
+    func syncGoogleReviews() async throws -> ApiResponse<GoogleSyncResult> {
+        return try await makeRequestRaw(endpoint: "admin/google-reviews/sync", method: "POST")
+    }
+
+    // MARK: - Towing Management
+    func getAdminTowing(status: String? = nil) async throws -> ApiResponse<Paginated<TowingRequest>> {
+        var params: [String: String] = ["per_page": "50"]
+        if let s = status { params["status"] = s }
+        return try await makeRequest(endpoint: "admin/towing", queryParams: params)
+    }
+
+    func updateAdminTowingStatus(id: Int, status: String, notes: String? = nil) async throws -> ApiResponse<TowingRequest> {
+        var body: [String: Any] = ["status": status]
+        if let n = notes { body["notes"] = n }
+        return try await makeRequestRaw(endpoint: "admin/towing/\(id)", method: "PUT", jsonBody: body)
+    }
+
+    // MARK: - Technician / Mechanic Bay Endpoints
+    func getMechanicMe() async throws -> ApiResponse<MechanicMe> {
+        return try await makeRequest(endpoint: "mechanic/me")
+    }
+
+    func getMechanicJobs() async throws -> ApiResponse<[MechanicJob]> {
+        return try await makeRequest(endpoint: "mechanic/jobs")
+    }
+
+    func getMechanicAvailableJobs() async throws -> ApiResponse<[MechanicJob]> {
+        return try await makeRequest(endpoint: "mechanic/available")
+    }
+
+    func claimMechanicJob(id: Int) async throws -> ApiResponse<Booking> {
+        return try await makeRequestRaw(endpoint: "mechanic/jobs/\(id)/claim", method: "POST")
+    }
+
+    func updateMechanicJobStatus(id: Int, status: String, notes: String? = nil) async throws -> ApiResponse<Booking> {
+        var body: [String: Any] = ["status": status]
+        if let n = notes { body["notes"] = n }
+        return try await makeRequestRaw(endpoint: "mechanic/jobs/\(id)/status", method: "POST", jsonBody: body)
     }
 }
 

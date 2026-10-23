@@ -31,8 +31,75 @@ struct ProfileView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 4)
 
+                // Section 0: Executive Command & Governance (Superadmin & Admin)
+                if session.currentUser?.isAdmin == true {
+                    sectionHeader(title: session.currentUser?.isSuperAdmin == true ? "SUPERADMINISTRATOR CONTROLS" : "WORKSHOP ADMIN CONTROLS")
+                    VStack(spacing: 0) {
+                        NavigationLink(destination: MasterAdminControlsView()) {
+                            profileMenuRow(icon: "gearshape.2.fill", title: "Master Administrative Controls")
+                        }
+                        menuDivider
+
+                        NavigationLink(destination: StaffDispatcherAdminView()) {
+                            profileMenuRow(icon: "arrow.triangle.pull", title: "Staff Dispatcher Hub")
+                        }
+                        menuDivider
+
+                        NavigationLink(destination: AdminBookingsManagerView()) {
+                            profileMenuRow(icon: "calendar.badge.checkmark", title: "Manage Bookings & Estimates")
+                        }
+                        menuDivider
+
+                        NavigationLink(destination: AdminCatalogManagerView()) {
+                            profileMenuRow(icon: "wrench.and.screwdriver.fill", title: "Catalog & Pricing (CRUD)")
+                        }
+                        menuDivider
+
+                        NavigationLink(destination: AdminUsersRolesView()) {
+                            profileMenuRow(icon: "person.3.fill", title: "Users & Role Permissions")
+                        }
+                        menuDivider
+
+                        NavigationLink(destination: AdminFinancialsView()) {
+                            profileMenuRow(icon: "banknote.fill", title: "Invoices & Financial Operations")
+                        }
+                        menuDivider
+
+                        Button {
+                            withAnimation {
+                                if session.activePortalMode == .customer {
+                                    session.syncPortalMode()
+                                } else {
+                                    session.setPortalMode(.customer)
+                                }
+                            }
+                        } label: {
+                            profileMenuRow(
+                                icon: "eye.fill",
+                                title: session.activePortalMode == .customer ? "Switch Back to Executive Center" : "Switch to Customer Perspective"
+                            )
+                        }
+                    }
+                    .luxuryCard()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+
+                // Section 0B: Technician Bay (Mechanics)
+                if session.currentUser?.isMechanic == true {
+                    sectionHeader(title: "TECHNICIAN SERVICE BAY")
+                    VStack(spacing: 0) {
+                        NavigationLink(destination: MechanicPortalView()) {
+                            profileMenuRow(icon: "wrench.and.screwdriver.fill", title: "Open My Service Bay & Jobs Board")
+                        }
+                    }
+                    .luxuryCard()
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+
                 // Section 1: Workshop Management
-                sectionHeader(title: "WORKSHOP MANAGEMENT")
+                sectionHeader(title: "CUSTOMER GARAGE & HISTORY")
                 VStack(spacing: 0) {
                     NavigationLink(destination: VehiclesView()) {
                         profileMenuRow(icon: "car.fill", title: "My Vehicles & Garage")
@@ -175,14 +242,13 @@ struct ProfileView: View {
                         .font(.system(size: 12))
                         .foregroundColor(.textMuted)
 
-                    let role = session.currentUser?.role ?? "CUSTOMER"
-                    let roleTitle = (role == "ADMIN" || role == "SUPER_ADMIN") ? "WORKSHOP STAFF" : "CUSTOMER ACCOUNT"
+                    let roleTitle = session.currentUser?.userRole.displayName.uppercased() ?? "CUSTOMER ACCOUNT"
                     Text(roleTitle)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(.primaryGold)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundColor(session.currentUser?.isSuperAdmin == true ? .bgDark : .primaryGold)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color.primaryGoldTint)
+                        .padding(.vertical, 3)
+                        .background(session.currentUser?.isSuperAdmin == true ? Color.primaryGold : Color.primaryGoldTint)
                         .cornerRadius(4)
                         .padding(.top, 2)
                 }

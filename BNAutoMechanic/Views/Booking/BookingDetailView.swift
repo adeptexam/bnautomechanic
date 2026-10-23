@@ -11,12 +11,14 @@ struct BookingDetailView: View {
     let bookingId: Int
     var bookingRef: String? = nil
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var session: SessionManager
 
     @State private var booking: Booking?
     @State private var isLoading = false
     @State private var showRescheduleSheet = false
     @State private var showCancelAlert = false
     @State private var showDeclineEstimateSheet = false
+    @State private var showAdminDetailSheet = false
     @State private var declineReason = ""
     @State private var newScheduledDate = Date()
     @State private var newScheduledTime = "10:00 AM"
@@ -77,6 +79,11 @@ struct BookingDetailView: View {
                         // Financial Billing Breakdown
                         billingCard(b)
 
+                        // Superadmin & Admin Executive Controls
+                        if session.currentUser?.isAdmin == true {
+                            adminExecutiveSection(b)
+                        }
+
                         // Action Buttons: Reschedule & Cancel
                         if b.canCancel() || b.canReschedule() {
                             actionsSection(b)
@@ -107,6 +114,13 @@ struct BookingDetailView: View {
         }
         .sheet(isPresented: $showDeclineEstimateSheet) {
             declineEstimateSheet
+        }
+        .sheet(isPresented: $showAdminDetailSheet) {
+            if let b = booking {
+                AdminBookingDetailSheet(booking: b) {
+                    Task { await loadDetails() }
+                }
+            }
         }
         .alert("Cancel Appointment", isPresented: $showCancelAlert) {
             Button("Cancel Appointment", role: .destructive) {
@@ -441,6 +455,42 @@ struct BookingDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Admin Executive Section
+    private func adminExecutiveSection(_ b: Booking) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("EXECUTIVE WORKSHOP ACTIONS")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundColor(.primaryGold)
+                Spacer()
+                Text("Superadmin / Admin Control")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.bgDark)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.primaryGold)
+                    .cornerRadius(4)
+            }
+
+            Button {
+                showAdminDetailSheet = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "slider.horizontal.3")
+                    Text("MANAGE ESTIMATE, DISPATCH & STATUS")
+                        .font(.system(size: 12, weight: .black))
+                }
+                .foregroundColor(.bgDark)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Color.primaryGold)
+                .cornerRadius(8)
+            }
+        }
+        .padding(14)
+        .luxuryCard()
     }
 
     // MARK: - API Calls

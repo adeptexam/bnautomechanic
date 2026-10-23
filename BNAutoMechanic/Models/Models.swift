@@ -302,6 +302,56 @@ struct User: Codable, Identifiable {
     func fullAvatarUrl() -> String? {
         return avatarUrl?.resolvedApiImageUrl()
     }
+
+    var userRole: UserRole {
+        guard let r = role?.uppercased() else { return .customer }
+        if r == "SUPER_ADMIN" || r == "SUPERADMIN" { return .superAdmin }
+        if r == "ADMIN" { return .admin }
+        if r == "EDITOR" { return .editor }
+        if r == "MECHANIC" || r == "TECHNICIAN" { return .mechanic }
+        if r == "STAFF" { return .staff }
+        return .customer
+    }
+
+    var isSuperAdmin: Bool { userRole.isSuperAdmin }
+    var isAdmin: Bool { userRole.isAdmin }
+    var isMechanic: Bool { userRole.isMechanic }
+    var isStaff: Bool { userRole.isStaff }
+}
+
+// MARK: - User Roles & Portals
+enum UserRole: String, Codable, CaseIterable {
+    case superAdmin = "SUPER_ADMIN"
+    case admin = "ADMIN"
+    case editor = "EDITOR"
+    case mechanic = "MECHANIC"
+    case staff = "STAFF"
+    case customer = "CUSTOMER"
+
+    var isSuperAdmin: Bool { self == .superAdmin }
+    var isAdmin: Bool { self == .superAdmin || self == .admin }
+    var isMechanic: Bool { self == .mechanic }
+    var isStaff: Bool { self == .superAdmin || self == .admin || self == .editor || self == .mechanic || self == .staff }
+
+    var displayName: String {
+        switch self {
+        case .superAdmin: return "Superadministrator"
+        case .admin: return "Workshop Admin"
+        case .editor: return "Service Editor"
+        case .mechanic: return "Technician / Mechanic"
+        case .staff: return "Workshop Staff"
+        case .customer: return "Customer Account"
+        }
+    }
+}
+
+enum PortalMode: String, CaseIterable, Identifiable {
+    case superadmin = "Superadmin"
+    case admin = "Admin"
+    case technician = "Technician"
+    case customer = "Customer"
+
+    var id: String { rawValue }
 }
 
 // MARK: - Auth & Sessions
@@ -699,19 +749,129 @@ struct TowingDetails: Codable {
     }
 }
 
+struct EstimateItem: Codable, Identifiable {
+    var id: String { "\(name)-\(unitPrice)-\(quantity)" }
+    let name: String
+    let description: String?
+    let type: String?
+    let unitPrice: Double
+    let quantity: Double
+    let total: Double
+
+    enum CodingKeys: String, CodingKey {
+        case name, description, type, total, quantity
+        case unitPrice = "unit_price"
+        case price
+    }
+
+    init(name: String, description: String? = nil, type: String? = "service", unitPrice: Double, quantity: Double = 1.0) {
+        self.name = name
+        self.description = description
+        self.type = type
+        self.unitPrice = unitPrice
+        self.quantity = quantity
+        self.total = unitPrice * quantity
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = (try? c.decode(String.self, forKey: .name)) ?? "Service Item"
+        description = try? c.decode(String.self, forKey: .description)
+        type = try? c.decode(String.self, forKey: .type)
+        let up = (try? c.decode(Double.self, forKey: .unitPrice)) ?? (try? c.decode(Double.self, forKey: .price)) ?? 0.0
+        unitPrice = up
+        quantity = (try? c.decode(Double.self, forKey: .quantity)) ?? 1.0
+        total = (try? c.decode(Double.self, forKey: .total)) ?? (up * quantity)
+    }
+}
+
 struct Estimate: Codable {
     let id: Int?
+    let items: [EstimateItem]?
     let partsCost: Double?
     let laborCost: Double?
+    let subtotal: Double?
+    let discount: Double?
+    let taxRate: Double?
+    let taxAmount: Double?
     let tax: Double?
     let total: Double?
     let status: String?
     let notes: String?
+    let approvedByStaff: Bool?
+    let approvalNote: String?
+    let approvedAt: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, tax, total, status, notes
+        case id, items, subtotal, discount, tax, total, status, notes
         case partsCost = "parts_cost"
         case laborCost = "labor_cost"
+        case taxRate = "tax_rate"
+        case taxAmount = "tax_amount"
+        case approvedByStaff = "approved_by_staff"
+        case approvalNote = "approval_note"
+        case approvedAt = "approved_at"
+    }
+
+    init(
+        id: Int? = nil,
+        items: [EstimateItem]? = nil,
+        partsCost: Double? = nil,
+        laborCost: Double? = nil,
+        subtotal: Double? = nil,
+        discount: Double? = nil,
+        taxRate: Double? = nil,
+        taxAmount: Double? = nil,
+        tax: Double? = nil,
+        total: Double? = nil,
+        status: String? = nil,
+        notes: String? = nil,
+        approvedByStaff: Bool? = nil,
+        approvalNote: String? = nil,
+        approvedAt: String? = nil
+    ) {
+        self.id = id
+        self.items = items
+        self.partsCost = partsCost
+        self.laborCost = laborCost
+        self.subtotal = subtotal
+        self.discount = discount
+        self.taxRate = taxRate
+        self.taxAmount = taxAmount
+        self.tax = tax
+        self.total = total
+        self.status = status
+        self.notes = notes
+        self.approvedByStaff = approvedByStaff
+        self.approvalNote = approvalNote
+        self.approvedAt = approvedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try? c.decode(Int.self, forKey: .id)
+        items = try? c.decode([EstimateItem].self, forKey: .items)
+        partsCost = try? c.decode(Double.self, forKey: .partsCost)
+        laborCost = try? c.decode(Double.self, forKey: .laborCost)
+        subtotal = try? c.decode(Double.self, forKey: .subtotal)
+        discount = try? c.decode(Double.self, forKey: .discount)
+        taxRate = try? c.decode(Double.self, forKey: .taxRate)
+        taxAmount = try? c.decode(Double.self, forKey: .taxAmount)
+        tax = try? c.decode(Double.self, forKey: .tax)
+        total = try? c.decode(Double.self, forKey: .total)
+        status = try? c.decode(String.self, forKey: .status)
+        notes = try? c.decode(String.self, forKey: .notes)
+        approvedByStaff = try? c.decode(Bool.self, forKey: .approvedByStaff)
+        approvalNote = try? c.decode(String.self, forKey: .approvalNote)
+        approvedAt = try? c.decode(String.self, forKey: .approvedAt)
+    }
+
+    var effectiveTotal: Double {
+        if let t = total, t > 0 { return t }
+        let sub = subtotal ?? ((partsCost ?? 0) + (laborCost ?? 0))
+        let tx = taxAmount ?? tax ?? 0
+        let disc = discount ?? 0
+        return max(0, sub + tx - disc)
     }
 }
 
@@ -1941,5 +2101,441 @@ struct PublicSettings: Codable {
 
     func fullLogoUrl() -> String? {
         return logoUrl?.resolvedApiImageUrl()
+    }
+}
+
+// MARK: - Admin Statistics Model (/admin/stats)
+struct AdminStats: Codable {
+    let bookingsTotal: Int?
+    let bookingsToday: Int?
+    let bookingsPending: Int?
+    let bookingsConfirmed: Int?
+    let servicesCompleted: Int?
+    let estimatesPending: Int?
+    let estimatesApproved: Int?
+    let servicesActive: Int?
+    let revenueTotal: Double?
+    let paymentsPending: Int?
+    let customersTotal: Int?
+    let vehiclesTotal: Int?
+    let totalMechanics: Int?
+    let invoicesPaid: Int?
+    let invoicesPaidTotal: Double?
+    let invoicesOutstanding: Int?
+    let invoicesOutstandingTotal: Double?
+    let averageTicket: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case bookingsTotal = "bookings_total"
+        case bookingsToday = "bookings_today"
+        case bookingsPending = "bookings_pending"
+        case bookingsConfirmed = "bookings_confirmed"
+        case servicesCompleted = "services_completed"
+        case estimatesPending = "estimates_pending"
+        case estimatesApproved = "estimates_approved"
+        case servicesActive = "services_active"
+        case revenueTotal = "revenue_total"
+        case paymentsPending = "payments_pending"
+        case customersTotal = "customers_total"
+        case vehiclesTotal = "vehicles_total"
+        case totalMechanics = "total_mechanics"
+        case invoicesPaid = "invoices_paid"
+        case invoicesPaidTotal = "invoices_paid_total"
+        case invoicesOutstanding = "invoices_outstanding"
+        case invoicesOutstandingTotal = "invoices_outstanding_total"
+        case averageTicket = "average_ticket"
+    }
+
+    init(
+        bookingsTotal: Int? = 0,
+        bookingsToday: Int? = 0,
+        bookingsPending: Int? = 0,
+        bookingsConfirmed: Int? = 0,
+        servicesCompleted: Int? = 0,
+        estimatesPending: Int? = 0,
+        estimatesApproved: Int? = 0,
+        servicesActive: Int? = 0,
+        revenueTotal: Double? = 0.0,
+        paymentsPending: Int? = 0,
+        customersTotal: Int? = 0,
+        vehiclesTotal: Int? = 0,
+        totalMechanics: Int? = 0,
+        invoicesPaid: Int? = 0,
+        invoicesPaidTotal: Double? = 0.0,
+        invoicesOutstanding: Int? = 0,
+        invoicesOutstandingTotal: Double? = 0.0,
+        averageTicket: Double? = 0.0
+    ) {
+        self.bookingsTotal = bookingsTotal
+        self.bookingsToday = bookingsToday
+        self.bookingsPending = bookingsPending
+        self.bookingsConfirmed = bookingsConfirmed
+        self.servicesCompleted = servicesCompleted
+        self.estimatesPending = estimatesPending
+        self.estimatesApproved = estimatesApproved
+        self.servicesActive = servicesActive
+        self.revenueTotal = revenueTotal
+        self.paymentsPending = paymentsPending
+        self.customersTotal = customersTotal
+        self.vehiclesTotal = vehiclesTotal
+        self.totalMechanics = totalMechanics
+        self.invoicesPaid = invoicesPaid
+        self.invoicesPaidTotal = invoicesPaidTotal
+        self.invoicesOutstanding = invoicesOutstanding
+        self.invoicesOutstandingTotal = invoicesOutstandingTotal
+        self.averageTicket = averageTicket
+    }
+}
+
+// MARK: - Payment & Gateway Settings (/admin/payment-settings)
+struct PaymentSettings: Codable {
+    var onlinePaymentEnabled: Bool?
+    var squareMode: String?
+    var squareApplicationIdSandbox: String?
+    var squareApplicationIdLive: String?
+    var squareLocationIdSandbox: String?
+    var squareLocationIdLive: String?
+    var squareAccessTokenSandbox: String?
+    var squareAccessTokenLive: String?
+    var payCashEnabled: Bool?
+    var payCardEnabled: Bool?
+    var payQrEnabled: Bool?
+    var payBankTransferEnabled: Bool?
+    var qrImageUrl: String?
+    var qrInstructions: String?
+    var cashInstructions: String?
+    var cardBrands: String?
+    var cardSurchargePercent: Double?
+    var cardInstructions: String?
+    var bankName: String?
+    var bankAccountName: String?
+    var bankAccountNumber: String?
+    var bankBranch: String?
+    var bankSwiftCode: String?
+    var bankRoutingCode: String?
+    var bankInstructions: String?
+
+    enum CodingKeys: String, CodingKey {
+        case onlinePaymentEnabled = "online_payment_enabled"
+        case squareMode = "square_mode"
+        case squareApplicationIdSandbox = "square_application_id_sandbox"
+        case squareApplicationIdLive = "square_application_id_live"
+        case squareLocationIdSandbox = "square_location_id_sandbox"
+        case squareLocationIdLive = "square_location_id_live"
+        case squareAccessTokenSandbox = "square_access_token_sandbox"
+        case squareAccessTokenLive = "square_access_token_live"
+        case payCashEnabled = "pay_cash_enabled"
+        case payCardEnabled = "pay_card_enabled"
+        case payQrEnabled = "pay_qr_enabled"
+        case payBankTransferEnabled = "pay_bank_transfer_enabled"
+        case qrImageUrl = "qr_image_url"
+        case qrInstructions = "qr_instructions"
+        case cashInstructions = "cash_instructions"
+        case cardBrands = "card_brands"
+        case cardSurchargePercent = "card_surcharge_percent"
+        case cardInstructions = "card_instructions"
+        case bankName = "bank_name"
+        case bankAccountName = "bank_account_name"
+        case bankAccountNumber = "bank_account_number"
+        case bankBranch = "bank_branch"
+        case bankSwiftCode = "bank_swift_code"
+        case bankRoutingCode = "bank_routing_code"
+        case bankInstructions = "bank_instructions"
+    }
+}
+
+// MARK: - Staff Member Model (/admin/staff)
+struct StaffMember: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let email: String
+    let phone: String?
+    let role: String?
+    let status: String?
+    let department: String?
+    let employeeId: String?
+    let jobTitle: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, email, phone, role, status, department
+        case employeeId = "employee_id"
+        case jobTitle = "job_title"
+    }
+}
+
+// MARK: - Staff Schedule Model (/admin/staff-schedule)
+struct StaffSchedule: Codable, Identifiable {
+    let id: Int
+    let staffId: Int?
+    let staffName: String?
+    let dayOfWeek: String?
+    let startTime: String?
+    let endTime: String?
+    let isWorking: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case staffId = "staff_id"
+        case staffName = "staff_name"
+        case dayOfWeek = "day_of_week"
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case isWorking = "is_working"
+    }
+}
+
+// MARK: - Staff Leave Model (/admin/staff-leave)
+struct StaffLeave: Codable, Identifiable {
+    let id: Int
+    let staffId: Int?
+    let staffName: String?
+    let startDate: String?
+    let endDate: String?
+    let reason: String?
+    let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, reason, status
+        case staffId = "staff_id"
+        case staffName = "staff_name"
+        case startDate = "start_date"
+        case endDate = "end_date"
+    }
+}
+
+// MARK: - Mechanic Personal Profile (/mechanic/me)
+struct MechanicMe: Codable {
+    let id: Int
+    let name: String
+    let specialty: String?
+    let photoUrl: String?
+    let phone: String?
+    let email: String?
+    let workingHours: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, specialty, phone, email
+        case photoUrl = "photo_url"
+        case workingHours = "working_hours"
+    }
+}
+
+// MARK: - Mechanic Jobs Model (/mechanic/jobs & /mechanic/available)
+struct MechanicJobVehicle: Codable {
+    let make: String?
+    let model: String?
+    let year: Int?
+    let registrationNumber: String?
+    let vehicleType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case make, model, year
+        case registrationNumber = "registration_number"
+        case vehicleType = "vehicle_type"
+    }
+
+    func displayName() -> String {
+        return "\(year.map { "\($0) " } ?? "")\(make ?? "") \(model ?? "")".trimmingCharacters(in: .whitespaces)
+    }
+}
+
+struct MechanicJob: Codable, Identifiable {
+    let id: Int
+    let reference: String
+    let status: String
+    let scheduledDate: String
+    let scheduledTime: String
+    let services: [String]?
+    let notes: String?
+    let vehicle: MechanicJobVehicle?
+    let customerFirstName: String?
+    let paymentStatus: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, reference, status, notes, services, vehicle
+        case scheduledDate = "scheduled_date"
+        case scheduledTime = "scheduled_time"
+        case customerFirstName = "customer_first_name"
+        case paymentStatus = "payment_status"
+        case updatedAt = "updated_at"
+    }
+}
+
+// MARK: - Admin Creation & Update Requests
+struct CreateServiceRequest: Codable {
+    let name: String
+    let categoryId: Int?
+    let price: Double
+    let salePrice: Double?
+    let durationMinutes: Int
+    let featured: Bool
+    let status: String
+    let description: String?
+    let shortDescription: String?
+    let includedItems: String?
+    let warrantyInfo: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, price, featured, status, description
+        case categoryId = "category_id"
+        case salePrice = "sale_price"
+        case durationMinutes = "duration_minutes"
+        case shortDescription = "short_description"
+        case includedItems = "included_items"
+        case warrantyInfo = "warranty_info"
+    }
+}
+
+struct CreateCategoryRequest: Codable {
+    let name: String
+    let icon: String?
+    let description: String?
+    let displayOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case name, icon, description
+        case displayOrder = "display_order"
+    }
+}
+
+struct CreateBrandRequest: Codable {
+    let name: String
+    let logoUrl: String?
+    let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case logoUrl = "logo_url"
+        case status
+    }
+}
+
+struct CreateDealRequest: Codable {
+    let title: String
+    let description: String?
+    let code: String
+    let discountType: String
+    let discountValue: Double
+    let minSpend: Double?
+    let startsAt: String?
+    let endsAt: String?
+    let appliesTo: String?
+    let publicDeal: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case title, description, code
+        case discountType = "discount_type"
+        case discountValue = "discount_value"
+        case minSpend = "min_spend"
+        case startsAt = "starts_at"
+        case endsAt = "ends_at"
+        case appliesTo = "applies_to"
+        case publicDeal = "public"
+    }
+}
+
+struct CreateMechanicRequest: Codable {
+    let name: String
+    let email: String?
+    let phone: String?
+    let specialization: String?
+    let experienceYears: Int?
+    let workingHours: String?
+    let status: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, email, phone, specialization, status
+        case experienceYears = "experience_years"
+        case workingHours = "working_hours"
+    }
+}
+
+struct CreateStaffRequest: Codable {
+    let name: String
+    let email: String
+    let phone: String?
+    let role: String
+    let department: String?
+    let password: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name, email, phone, role, department, password
+    }
+}
+
+struct UpdateSettingsRequest: Codable {
+    var siteName: String?
+    var tagline: String?
+    var phone: String?
+    var secondaryPhone: String?
+    var email: String?
+    var address: String?
+    var mapUrl: String?
+    var currency: String?
+    var currencySymbol: String?
+    var taxRate: Double?
+    var maintenanceMode: Bool?
+    var maintenanceMessage: String?
+    var maintenanceUntil: String?
+
+    enum CodingKeys: String, CodingKey {
+        case phone, email, address, currency
+        case siteName = "site_name"
+        case tagline
+        case secondaryPhone = "secondary_phone"
+        case mapUrl = "map_url"
+        case currencySymbol = "currency_symbol"
+        case taxRate = "tax_rate"
+        case maintenanceMode = "maintenance_mode"
+        case maintenanceMessage = "maintenance_message"
+        case maintenanceUntil = "maintenance_until"
+    }
+}
+
+struct CreateInvoiceRequest: Codable {
+    let bookingId: Int?
+    let userId: Int?
+    let customerName: String?
+    let customerEmail: String?
+    let items: [[String: String]]
+    let subtotal: Double
+    let tax: Double
+    let total: Double
+    let dueDate: String?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case items, subtotal, tax, total, notes
+        case bookingId = "booking_id"
+        case userId = "user_id"
+        case customerName = "customer_name"
+        case customerEmail = "customer_email"
+        case dueDate = "due_date"
+    }
+}
+
+struct GoogleSyncResult: Codable {
+    let success: Bool?
+    let message: String?
+    let reviewsCount: Int?
+    let syncedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success, message
+        case reviewsCount = "reviews_count"
+        case syncedAt = "synced_at"
+    }
+}
+
+struct CashReport: Codable {
+    let totalCash: Double?
+    let transactionsCount: Int?
+    let reportDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case totalCash = "total_cash"
+        case transactionsCount = "transactions_count"
+        case reportDate = "report_date"
     }
 }

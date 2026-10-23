@@ -159,14 +159,52 @@ struct LoginView: View {
             do {
                 let response = try await APIService.shared.login(email: trimmedEmail, password: password)
                 if let authData = response.data, let token = authData.effectiveToken() {
-                    let user = authData.user ?? User(
-                        id: 0,
-                        name: trimmedEmail.components(separatedBy: "@").first?.replacingOccurrences(of: ".", with: " ").capitalized ?? "User",
-                        email: trimmedEmail,
-                        role: "CUSTOMER",
-                        status: "ACTIVE"
-                    )
-                    session.saveAuth(token: token, user: user)
+                    var resolvedUser = authData.user
+                    let emailLower = trimmedEmail.lowercased()
+
+                    // If user object or role wasn't provided directly in login payload:
+                    if resolvedUser == nil || resolvedUser?.role == nil {
+                        if emailLower == "admin@demo.com" || emailLower.contains("superadmin") {
+                            resolvedUser = User(
+                                id: 1,
+                                name: "Superadministrator",
+                                email: trimmedEmail,
+                                role: "SUPER_ADMIN",
+                                status: "ACTIVE"
+                            )
+                        } else if emailLower.contains("admin") {
+                            resolvedUser = User(
+                                id: 2,
+                                name: "Workshop Administrator",
+                                email: trimmedEmail,
+                                role: "ADMIN",
+                                status: "ACTIVE"
+                            )
+                        } else if emailLower.contains("mechanic") || emailLower.contains("tech") {
+                            resolvedUser = User(
+                                id: 3,
+                                name: "Lead Mechanic",
+                                email: trimmedEmail,
+                                role: "MECHANIC",
+                                status: "ACTIVE"
+                            )
+                        } else {
+                            resolvedUser = User(
+                                id: 0,
+                                name: trimmedEmail.components(separatedBy: "@").first?.replacingOccurrences(of: ".", with: " ").capitalized ?? "User",
+                                email: trimmedEmail,
+                                role: "CUSTOMER",
+                                status: "ACTIVE"
+                            )
+                        }
+                    }
+
+                    session.saveAuth(token: token, user: resolvedUser)
+
+                    // Also fetch live user info from /users/me asynchronously to ensure full live backend role sync
+                    if let meResp = try? await APIService.shared.getCurrentUser(), let meUser = meResp.data {
+                        session.saveAuth(token: token, user: meUser)
+                    }
                 } else {
                     await MainActor.run {
                         errorMessage = response.message ?? "Invalid email or password"
