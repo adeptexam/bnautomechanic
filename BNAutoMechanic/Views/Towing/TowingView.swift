@@ -172,7 +172,9 @@ struct TowingView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .sheet(isPresented: $showBookingSheet) {
             BookAppointmentView(preselectedServiceId: 4)
         }
@@ -256,7 +258,9 @@ struct TowingStatusView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             await loadTowing()
         }

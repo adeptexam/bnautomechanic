@@ -115,7 +115,9 @@ struct ProfileDetailsView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .onAppear {
             if let user = session.currentUser {
                 name = user.name

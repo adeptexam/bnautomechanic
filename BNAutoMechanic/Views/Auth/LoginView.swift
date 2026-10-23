@@ -133,7 +133,9 @@ struct LoginView: View {
             .padding(.horizontal, 24)
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private func performLogin() {
@@ -299,7 +301,9 @@ struct RegisterView: View {
             .padding(.horizontal, 24)
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private func performRegister() {
@@ -408,7 +412,9 @@ struct ForgotPasswordView: View {
             .padding(.horizontal, 24)
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private func sendReset() {

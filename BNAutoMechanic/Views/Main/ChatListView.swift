@@ -83,7 +83,9 @@ struct ChatListView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             await loadRooms()
         }
@@ -263,7 +265,9 @@ struct ChatRoomView: View {
             .background(Color.bgDark)
         }
         .background(Color.surfaceDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             await loadMessages()
             startPolling()

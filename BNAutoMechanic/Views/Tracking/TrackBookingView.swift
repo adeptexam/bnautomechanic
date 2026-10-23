@@ -140,7 +140,9 @@ struct TrackBookingView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
     }
 
     private func performTrack() {

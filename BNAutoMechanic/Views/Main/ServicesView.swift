@@ -130,7 +130,9 @@ struct ServicesView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .task {
             await loadServices()
         }

@@ -131,7 +131,9 @@ struct ProfileView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .alert("Log Out", isPresented: $showLogoutAlert) {
             Button("Log Out", role: .destructive) {
                 session.logout()

@@ -202,7 +202,9 @@ struct ServiceDetailView: View {
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
-        .navigationBarHidden(true)
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .sheet(isPresented: $showBookingWizard) {
             BookAppointmentView(preselectedServiceId: serviceId)
         }
