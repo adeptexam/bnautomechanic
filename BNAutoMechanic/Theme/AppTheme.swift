@@ -37,6 +37,8 @@ extension Color {
     // Status & Semantic Badges
     static let statusPending = Color(hex: "F59E0B")
     static let statusPendingBg = Color(hex: "F59E0B").opacity(0.125)
+    static let statusWarning = Color(hex: "F59E0B")
+    static let statusWarningBg = Color(hex: "F59E0B").opacity(0.125)
     static let statusConfirmed = Color(hex: "3B82F6")
     static let statusConfirmedBg = Color(hex: "3B82F6").opacity(0.125)
     static let statusInProgress = Color(hex: "F5B900")
