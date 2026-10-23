@@ -1147,6 +1147,24 @@ struct CreateBookingRequest: Codable {
     let notes: String?
     let couponCode: String?
 
+    init(
+        serviceIds: [Int],
+        vehicleId: Int? = nil,
+        vehicle: CreateVehicleRequest? = nil,
+        scheduledDate: String,
+        scheduledTime: String,
+        notes: String? = nil,
+        couponCode: String? = nil
+    ) {
+        self.serviceIds = serviceIds
+        self.vehicleId = vehicleId
+        self.vehicle = vehicle
+        self.scheduledDate = scheduledDate
+        self.scheduledTime = scheduledTime
+        self.notes = notes
+        self.couponCode = couponCode
+    }
+
     enum CodingKeys: String, CodingKey {
         case vehicle, notes
         case serviceIds = "service_ids"
