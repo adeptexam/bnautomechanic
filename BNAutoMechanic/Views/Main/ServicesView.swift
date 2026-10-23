@@ -47,7 +47,7 @@ struct ServicesView: View {
                 TextField("Search services...", text: $searchText)
                     .foregroundColor(.textForeground)
                     .font(.system(size: 14))
-                    .autocapitalization(.none)
+                    .textInputAutocapitalization(.never)
 
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {

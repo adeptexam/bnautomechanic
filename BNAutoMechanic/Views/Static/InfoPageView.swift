@@ -137,21 +137,27 @@ struct InfoPageView: View {
 
                 contactRow(icon: "phone.fill", label: "Phone", value: "(609) 555-0199") {
                     if let url = URL(string: "tel:+16095550199") {
+                        #if os(iOS)
                         UIApplication.shared.open(url)
+                        #endif
                     }
                 }
                 Divider().background(Color.borderSubtle)
 
                 contactRow(icon: "envelope.fill", label: "Email", value: "service@bnautomechanic.net") {
                     if let url = URL(string: "mailto:service@bnautomechanic.net") {
+                        #if os(iOS)
                         UIApplication.shared.open(url)
+                        #endif
                     }
                 }
                 Divider().background(Color.borderSubtle)
 
                 contactRow(icon: "globe", label: "Website", value: "https://bnautomechanic.net") {
                     if let url = URL(string: "https://bnautomechanic.net") {
+                        #if os(iOS)
                         UIApplication.shared.open(url)
+                        #endif
                     }
                 }
                 Divider().background(Color.borderSubtle)

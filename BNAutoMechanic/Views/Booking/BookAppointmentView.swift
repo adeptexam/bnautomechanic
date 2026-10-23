@@ -264,7 +264,7 @@ struct BookAppointmentView: View {
                             .foregroundColor(.textForeground)
                         TextField("ABC-1234", text: $plate)
                             .textFieldStyle(DarkInputFieldStyle())
-                            .autocapitalization(.allCharacters)
+                .textInputAutocapitalization(.characters)
                     }
                 }
             }
@@ -403,7 +403,7 @@ struct BookAppointmentView: View {
 
             TextField("e.g. OIL15, BRAKE20", text: $couponCode)
                 .textFieldStyle(DarkInputFieldStyle())
-                .autocapitalization(.allCharacters)
+                .textInputAutocapitalization(.characters)
         }
     }
 

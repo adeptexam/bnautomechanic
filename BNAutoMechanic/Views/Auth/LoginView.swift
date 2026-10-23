@@ -52,7 +52,7 @@ struct LoginView: View {
                         .textFieldStyle(DarkInputFieldStyle())
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
+                        .textInputAutocapitalization(.never)
                         .disableAutocorrection(true)
                 }
                 .padding(.top, 24)
@@ -235,7 +235,7 @@ struct RegisterView: View {
                         .textFieldStyle(DarkInputFieldStyle())
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
+                        .textInputAutocapitalization(.never)
                 }
                 .padding(.top, 16)
 
@@ -376,7 +376,7 @@ struct ForgotPasswordView: View {
                         .textFieldStyle(DarkInputFieldStyle())
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
+                        .textInputAutocapitalization(.never)
                 }
                 .padding(.top, 24)
 

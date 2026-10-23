@@ -180,7 +180,9 @@ struct TowingView: View {
 
     private func callEmergency() {
         if let url = URL(string: "tel:+16095550199") {
+            #if os(iOS)
             UIApplication.shared.open(url)
+            #endif
         }
     }
 }
