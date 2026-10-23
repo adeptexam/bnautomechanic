@@ -34,13 +34,6 @@ struct ApiResponse<T: Codable>: Codable {
         message = try? container.decode(String.self, forKey: .message)
         code = try? container.decode(String.self, forKey: .code)
     }
-
-    init(success: Bool? = true, data: T? = nil, message: String? = nil, code: String? = nil) {
-        self.success = success
-        self.data = data
-        self.message = message
-        self.code = code
-    }
 }
 
 struct Paginated<T: Codable>: Codable {

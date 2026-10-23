@@ -5,6 +5,7 @@
 
 import Foundation
 import Combine
+import SwiftUI
 
 // MARK: - Session Manager
 class SessionManager: ObservableObject {
