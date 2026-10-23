@@ -783,6 +783,16 @@ struct EstimateItem: Codable, Identifiable {
         quantity = (try? c.decode(Double.self, forKey: .quantity)) ?? 1.0
         total = (try? c.decode(Double.self, forKey: .total)) ?? (up * quantity)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(name, forKey: .name)
+        try c.encodeIfPresent(description, forKey: .description)
+        try c.encodeIfPresent(type, forKey: .type)
+        try c.encode(unitPrice, forKey: .unitPrice)
+        try c.encode(quantity, forKey: .quantity)
+        try c.encode(total, forKey: .total)
+    }
 }
 
 struct Estimate: Codable {
@@ -864,6 +874,25 @@ struct Estimate: Codable {
         approvedByStaff = try? c.decode(Bool.self, forKey: .approvedByStaff)
         approvalNote = try? c.decode(String.self, forKey: .approvalNote)
         approvedAt = try? c.decode(String.self, forKey: .approvedAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(id, forKey: .id)
+        try c.encodeIfPresent(items, forKey: .items)
+        try c.encodeIfPresent(partsCost, forKey: .partsCost)
+        try c.encodeIfPresent(laborCost, forKey: .laborCost)
+        try c.encodeIfPresent(subtotal, forKey: .subtotal)
+        try c.encodeIfPresent(discount, forKey: .discount)
+        try c.encodeIfPresent(taxRate, forKey: .taxRate)
+        try c.encodeIfPresent(taxAmount, forKey: .taxAmount)
+        try c.encodeIfPresent(tax, forKey: .tax)
+        try c.encodeIfPresent(total, forKey: .total)
+        try c.encodeIfPresent(status, forKey: .status)
+        try c.encodeIfPresent(notes, forKey: .notes)
+        try c.encodeIfPresent(approvedByStaff, forKey: .approvedByStaff)
+        try c.encodeIfPresent(approvalNote, forKey: .approvalNote)
+        try c.encodeIfPresent(approvedAt, forKey: .approvedAt)
     }
 
     var effectiveTotal: Double {
