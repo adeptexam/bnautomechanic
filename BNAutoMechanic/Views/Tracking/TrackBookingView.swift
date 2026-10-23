@@ -95,7 +95,7 @@ struct TrackBookingView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Ref: \(track.reference)")
+                                    Text("Ref: \(track.reference ?? "Unknown")")
                                         .font(.system(size: 15, weight: .bold))
                                         .foregroundColor(.textForeground)
                                     Text(track.vehicleSummary ?? "Customer Vehicle")
@@ -103,7 +103,7 @@ struct TrackBookingView: View {
                                         .foregroundColor(.textMuted)
                                 }
                                 Spacer()
-                                StatusBadge(status: track.status)
+                                StatusBadge(status: track.status ?? "PENDING")
                             }
 
                             Divider().background(Color.borderSubtle)
@@ -114,7 +114,7 @@ struct TrackBookingView: View {
                                     .foregroundColor(.primaryGold)
                                     .tracking(0.5)
 
-                                Text(statusDescription(for: track.status))
+                                Text(statusDescription(for: track.status ?? "PENDING"))
                                     .font(.system(size: 13))
                                     .foregroundColor(.textForeground)
                                     .lineSpacing(4)

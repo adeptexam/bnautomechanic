@@ -105,7 +105,7 @@ struct InvoicesView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(String(format: "$%.2f", inv.total))
+                Text(String(format: "$%.2f", inv.total ?? 0))
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.primaryGold)
 
@@ -214,7 +214,7 @@ struct InvoiceDetailView: View {
                                 .font(.system(size: 13))
                                 .foregroundColor(.textMuted)
                             Spacer()
-                            Text(String(format: "$%.2f", invoice.subtotal))
+                            Text(String(format: "$%.2f", invoice.subtotal ?? 0))
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.textForeground)
                         }
@@ -224,7 +224,7 @@ struct InvoiceDetailView: View {
                                 .font(.system(size: 13))
                                 .foregroundColor(.textMuted)
                             Spacer()
-                            Text(String(format: "$%.2f", invoice.tax))
+                            Text(String(format: "$%.2f", invoice.tax ?? 0))
                                 .font(.system(size: 13, weight: .semibold))
                                 .foregroundColor(.textForeground)
                         }
@@ -236,7 +236,7 @@ struct InvoiceDetailView: View {
                                 .font(.system(size: 15, weight: .bold))
                                 .foregroundColor(.textForeground)
                             Spacer()
-                            Text(String(format: "$%.2f", invoice.total))
+                            Text(String(format: "$%.2f", invoice.total ?? 0))
                                 .font(.system(size: 18, weight: .black))
                                 .foregroundColor(.primaryGold)
                         }

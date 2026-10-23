@@ -234,6 +234,7 @@ struct Service: Codable, Identifiable {
     let category: ServiceCategory?
     let description: String?
     let shortDescription: String?
+    let basePrice: Double?
     let durationMinutes: Int?
     let warrantyInfo: String?
     let benefits: [String]?
@@ -247,6 +248,7 @@ struct Service: Codable, Identifiable {
         case imageUrl = "image_url"
         case categoryId = "category_id"
         case shortDescription = "short_description"
+        case basePrice = "base_price"
         case durationMinutes = "duration_minutes"
         case warrantyInfo = "warranty_info"
         case includedItems = "included_items"
@@ -259,6 +261,11 @@ struct Service: Codable, Identifiable {
         if mins < 60 { return "\(mins)m" }
         if mins % 60 == 0 { return "\(mins / 60)h" }
         return "\(mins / 60)h \(mins % 60)m"
+    }
+
+    func formattedPrice() -> String {
+        guard let basePrice else { return "Price on request" }
+        return String(format: "$%.2f", basePrice)
     }
 }
 
@@ -430,10 +437,12 @@ struct BookingTrack: Codable {
     let status: String?
     let vehicleSummary: String?
     let timeline: [String]?
+    let technicianName: String?
 
     enum CodingKeys: String, CodingKey {
         case booking, reference, status, timeline
         case vehicleSummary = "vehicle_summary"
+        case technicianName = "technician_name"
     }
 }
 

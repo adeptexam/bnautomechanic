@@ -153,13 +153,13 @@ struct ReviewsView: View {
                     Circle()
                         .fill(Color.primaryGoldTint)
                         .frame(width: 34, height: 34)
-                    Text(initials(for: r.authorName))
+                    Text(initials(for: r.userName))
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.primaryGold)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(r.authorName ?? "Customer")
+                    Text(r.userName ?? "Customer")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.textForeground)
 
@@ -314,7 +314,12 @@ struct WriteReviewSheet: View {
 
         Task {
             do {
-                let req = CreateReviewRequest(rating: rating, comment: comment.trimmingCharacters(in: .whitespaces))
+                let req = CreateReviewRequest(
+                    rating: rating,
+                    comment: comment.trimmingCharacters(in: .whitespaces),
+                    bookingId: nil,
+                    serviceId: nil
+                )
                 let resp = try await APIService.shared.createReview(req)
                 await MainActor.run {
                     isSubmitting = false

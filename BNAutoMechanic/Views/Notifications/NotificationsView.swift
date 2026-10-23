@@ -106,7 +106,7 @@ struct NotificationsView: View {
             // Body
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(notif.title ?? "Workshop Update")
+                    Text(notif.title)
                         .font(.system(size: 14, weight: isRead ? .medium : .bold))
                         .foregroundColor(.textForeground)
                         .lineLimit(1)
@@ -120,8 +120,8 @@ struct NotificationsView: View {
                     }
                 }
 
-                if let msg = notif.message, !msg.isEmpty {
-                    Text(msg)
+                if !notif.message.isEmpty {
+                    Text(notif.message)
                         .font(.system(size: 12))
                         .foregroundColor(.textMuted)
                         .lineLimit(3)

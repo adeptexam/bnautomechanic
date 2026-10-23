@@ -94,7 +94,7 @@ class APIService {
         request.timeoutInterval = 15
 
         if let token = SessionManager.shared.getToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("Bearer \\(token)", forHTTPHeaderField: "Authorization")
         }
 
         if let body = body {

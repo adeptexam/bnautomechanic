@@ -26,20 +26,27 @@ struct BNAutoMechanicTests {
         let activeBooking = Booking(
             id: 1,
             reference: "BN-2023-0001",
+            status: "CONFIRMED",
             userId: 1,
             vehicleId: 1,
-            status: "CONFIRMED",
+            mechanicId: nil,
             scheduledDate: "2026-11-01",
             scheduledTime: "10:00 AM",
+            notes: nil,
             totalAmount: 150.0,
+            paymentStatus: nil,
             amountPaid: 0.0,
             balanceDue: 150.0,
-            notes: nil,
-            couponCode: nil,
-            vehicle: nil,
+            customerName: nil,
+            customerEmail: nil,
+            customerPhone: nil,
             services: nil,
-            estimate: nil,
+            vehicle: nil,
             towing: nil,
+            estimate: nil,
+            extras: nil,
+            coupon: nil,
+            invoiceId: nil,
             createdAt: nil
         )
 
@@ -50,20 +57,27 @@ struct BNAutoMechanicTests {
         let completedBooking = Booking(
             id: 2,
             reference: "BN-2023-0002",
+            status: "COMPLETED",
             userId: 1,
             vehicleId: 1,
-            status: "COMPLETED",
+            mechanicId: nil,
             scheduledDate: "2026-10-01",
             scheduledTime: "10:00 AM",
+            notes: nil,
             totalAmount: 200.0,
+            paymentStatus: nil,
             amountPaid: 200.0,
             balanceDue: 0.0,
-            notes: nil,
-            couponCode: nil,
-            vehicle: nil,
+            customerName: nil,
+            customerEmail: nil,
+            customerPhone: nil,
             services: nil,
-            estimate: nil,
+            vehicle: nil,
             towing: nil,
+            estimate: nil,
+            extras: nil,
+            coupon: nil,
+            invoiceId: nil,
             createdAt: nil
         )
 
@@ -76,22 +90,25 @@ struct BNAutoMechanicTests {
         let service = Service(
             id: 1,
             name: "Full Synthetic Oil Service",
-            shortDescription: "Oil & filter change",
-            description: "Complete synthetic oil and genuine filter replacement.",
-            categoryId: 1,
-            basePrice: 89.99,
-            estimatedDurationMinutes: 60,
-            featured: true,
+            slug: nil,
             status: "ACTIVE",
+            featured: true,
+            imageUrl: nil,
+            categoryId: 1,
+            category: nil,
+            description: "Complete synthetic oil and genuine filter replacement.",
+            shortDescription: "Oil & filter change",
+            basePrice: 89.99,
+            durationMinutes: 60,
+            warrantyInfo: nil,
             benefits: ["Smooth engine performance", "Extended engine life"],
             includedItems: ["Synthetic oil up to 5 qts", "OEM filter", "Fluid top-off"],
+            faqs: nil,
             ratingAverage: 4.9,
-            ratingCount: 120,
-            category: nil,
-            faqs: nil
+            reviewsCount: 120
         )
 
-        #expect(service.formattedDuration() == "60 mins")
+        #expect(service.formattedDuration() == "1h")
         #expect(service.formattedPrice() == "$89.99")
     }
 
