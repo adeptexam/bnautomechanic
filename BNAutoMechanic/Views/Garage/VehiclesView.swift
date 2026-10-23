@@ -301,7 +301,7 @@ struct AddVehicleSheet: View {
 
         Task {
             do {
-                let req = CreateVehicleRequest(make: trimmedMake, model: trimmedModel, year: year, registrationNumber: trimmedPlate)
+                let req = CreateVehicleRequest(make: trimmedMake, model: trimmedModel, year: year, registrationNumber: trimmedPlate, vehicleType: nil)
                 let resp = try await APIService.shared.createVehicle(req)
                 await MainActor.run {
                     isSaving = false

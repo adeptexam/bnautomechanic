@@ -210,7 +210,7 @@ struct BookingDetailView: View {
                         .foregroundColor(.textForeground)
                 }
                 Spacer()
-                Text(est.status)
+                Text(est.status ?? "PENDING")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(est.status == "PENDING" ? .statusPending : .statusCompleted)
                     .padding(.horizontal, 8)
@@ -233,12 +233,12 @@ struct BookingDetailView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.textForeground)
                 Spacer()
-                Text(String(format: "$%.2f", est.total))
+                Text(String(format: "$%.2f", est.total ?? 0.0))
                     .font(.system(size: 16, weight: .black))
                     .foregroundColor(.primaryGold)
             }
 
-            if est.status == "PENDING" || booking.status == "ESTIMATE_SENT" {
+            if (est.status ?? "") == "PENDING" || booking.status == "ESTIMATE_SENT" {
                 HStack(spacing: 10) {
                     Button(action: { showDeclineEstimateSheet = true }) {
                         Text("Decline Quote")

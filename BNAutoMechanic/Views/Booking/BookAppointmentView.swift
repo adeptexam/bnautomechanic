@@ -579,7 +579,8 @@ struct BookAppointmentView: View {
             make: make.trimmingCharacters(in: .whitespaces),
             model: model.trimmingCharacters(in: .whitespaces),
             year: Int(yearText) ?? 2023,
-            registrationNumber: plate.trimmingCharacters(in: .whitespaces).isEmpty ? nil : plate.trimmingCharacters(in: .whitespaces)
+            registrationNumber: plate.trimmingCharacters(in: .whitespaces).isEmpty ? nil : plate.trimmingCharacters(in: .whitespaces),
+            vehicleType: nil
         ) : nil
 
         let req = CreateBookingRequest(

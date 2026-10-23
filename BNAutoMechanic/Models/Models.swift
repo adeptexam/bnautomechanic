@@ -590,6 +590,15 @@ struct Deal: Codable, Identifiable {
         case discountAmount = "discount_amount"
         case expiresAt = "expires_at"
     }
+
+    func discountBadge() -> String {
+        if let percent = discountPercent, percent > 0 {
+            return "\(Int(percent))% OFF"
+        } else if let amount = discountAmount, amount > 0 {
+            return String(format: "$%.0f OFF", amount)
+        }
+        return "DEAL"
+    }
 }
 
 // MARK: - Settings
