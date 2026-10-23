@@ -4,6 +4,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ServicesView: View {
     @Binding var selectedTab: Int
@@ -47,7 +50,10 @@ struct ServicesView: View {
                 TextField("Search services...", text: $searchText)
                     .foregroundColor(.textForeground)
                     .font(.system(size: 14))
+                    #if os(iOS)
                     .textInputAutocapitalization(.never)
+                    .autocapitalization(.none)
+                    #endif
 
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {

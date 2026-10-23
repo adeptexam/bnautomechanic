@@ -256,7 +256,9 @@ struct AddVehicleSheet: View {
                             .foregroundColor(.textForeground)
                         TextField("e.g. ABC-1234", text: $plate)
                             .textFieldStyle(DarkInputFieldStyle())
+                            #if os(iOS)
                             .textInputAutocapitalization(.characters)
+                            #endif
                     }
 
                     if !errorMessage.isEmpty {

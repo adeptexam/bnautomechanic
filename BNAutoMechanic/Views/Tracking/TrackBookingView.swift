@@ -58,7 +58,9 @@ struct TrackBookingView: View {
                                 .foregroundColor(.textForeground)
                             TextField("e.g. BN-2023-0814", text: $reference)
                                 .textFieldStyle(DarkInputFieldStyle())
+                                #if os(iOS)
                                 .textInputAutocapitalization(.characters)
+                                #endif
                         }
 
                         VStack(alignment: .leading, spacing: 6) {
