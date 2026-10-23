@@ -34,6 +34,13 @@ struct ApiResponse<T: Codable>: Codable {
         message = try? container.decode(String.self, forKey: .message)
         code = try? container.decode(String.self, forKey: .code)
     }
+
+    init(success: Bool? = true, data: T? = nil, message: String? = nil, code: String? = nil) {
+        self.success = success
+        self.data = data
+        self.message = message
+        self.code = code
+    }
 }
 
 struct Paginated<T: Codable>: Codable {
@@ -46,6 +53,14 @@ struct Paginated<T: Codable>: Codable {
     enum CodingKeys: String, CodingKey {
         case items, total, page, pages, data, results, rows
         case perPage = "per_page"
+    }
+
+    init(items: [T]? = nil, total: Int? = nil, page: Int? = nil, perPage: Int? = nil, pages: Int? = nil) {
+        self.items = items
+        self.total = total
+        self.page = page
+        self.perPage = perPage
+        self.pages = pages
     }
 
     init(from decoder: Decoder) throws {
@@ -67,6 +82,15 @@ struct Paginated<T: Codable>: Codable {
         } else {
             items = []
         }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(items, forKey: .items)
+        try container.encodeIfPresent(total, forKey: .total)
+        try container.encodeIfPresent(page, forKey: .page)
+        try container.encodeIfPresent(perPage, forKey: .perPage)
+        try container.encodeIfPresent(pages, forKey: .pages)
     }
 }
 
