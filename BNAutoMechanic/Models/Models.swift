@@ -629,10 +629,6 @@ struct Service: Codable, Identifiable {
         return salePrice ?? basePrice ?? 0.0
     }
 
-    func effectivePrice() -> Double {
-        return effectivePrice
-    }
-
     enum CodingKeys: String, CodingKey {
         case id, name, slug, description, featured, status, benefits, faqs, features, tags, category
         case categoryId = "category_id"
