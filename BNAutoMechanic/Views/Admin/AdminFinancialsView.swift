@@ -293,7 +293,7 @@ struct AdminFinancialsView: View {
                                 .font(.system(size: 11))
                                 .foregroundColor(.textMuted)
                             Spacer()
-                            Text(String(format: "$%.2f", inv.total))
+                            Text(String(format: "$%.2f", inv.total ?? 0.0))
                                 .font(.system(size: 15, weight: .black))
                                 .foregroundColor(.primaryGold)
                         }
