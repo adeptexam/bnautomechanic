@@ -503,9 +503,11 @@ struct AdminFinancialsView: View {
                             StatusBadge(status: tow.status)
                         }
 
-                        Text("Destination: \(tow.destination)")
-                            .font(.system(size: 11))
-                            .foregroundColor(.textMuted)
+                        if let dest = tow.destination, !dest.isEmpty {
+                            Text("Destination: \(dest)")
+                                .font(.system(size: 11))
+                                .foregroundColor(.textMuted)
+                        }
 
                         if let v = tow.vehicleInfo {
                             Text("Vehicle: \(v)")

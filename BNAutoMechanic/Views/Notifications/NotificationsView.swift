@@ -31,7 +31,7 @@ struct NotificationsView: View {
 
                 Spacer()
 
-                if notifications.contains(where: { !($0.read ?? false) }) {
+                if notifications.contains(where: { !$0.read }) {
                     Button(action: markAllAsRead) {
                         Text("Mark all read")
                             .font(.system(size: 11, weight: .bold))
@@ -93,7 +93,7 @@ struct NotificationsView: View {
 
     // MARK: - Notification Card (Matching item_notification.xml)
     private func notificationCard(_ notif: AppNotification) -> some View {
-        let isRead = notif.read ?? false
+        let isRead = notif.read
         return HStack(alignment: .top, spacing: 12) {
             // Icon
             ZStack {
