@@ -242,3 +242,49 @@ struct DarkNavigationBar: View {
         .background(Color.bgDark)
     }
 }
+
+// MARK: - Layout & Navigation Clearance System
+struct AppLayout {
+    static let bottomDockHeight: CGFloat = 80
+    static let bottomDockClearance: CGFloat = 114
+}
+
+extension CGFloat {
+    static let bottomDockClearance: CGFloat = 114
+}
+
+struct BottomDockClearanceModifier: ViewModifier {
+    var extra: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.bottom, CGFloat.bottomDockClearance + extra)
+    }
+}
+
+struct HideBottomDockModifier: ViewModifier {
+    @EnvironmentObject var session: SessionManager
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                session.setTabBarHidden(true)
+            }
+            .onDisappear {
+                session.setTabBarHidden(false)
+            }
+    }
+}
+
+extension View {
+    /// Ensures scroll content clears the floating bottom luxury navigation dock completely with zero overlap.
+    func bottomDockClearance(extra: CGFloat = 0) -> some View {
+        self.modifier(BottomDockClearanceModifier(extra: extra))
+    }
+
+    /// Automatically hides the bottom navigation bar when navigating to a secondary/pushed view and restores it on return.
+    func hideBottomDockOnPush() -> some View {
+        self.modifier(HideBottomDockModifier())
+    }
+}
+

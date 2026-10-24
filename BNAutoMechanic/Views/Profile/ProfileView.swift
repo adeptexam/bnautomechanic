@@ -194,7 +194,7 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 24)
-                .padding(.bottom, 32)
+                .bottomDockClearance()
             }
         }
         .background(Color.bgDark.ignoresSafeArea())

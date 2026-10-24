@@ -55,7 +55,7 @@ struct SuperadminDashboardView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 10)
-            .padding(.bottom, 36)
+            .bottomDockClearance()
         }
         .background(Color.bgDark.ignoresSafeArea())
         #if os(iOS)

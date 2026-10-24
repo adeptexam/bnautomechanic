@@ -66,8 +66,9 @@ struct ServiceHistoryView: View {
                                 BookingCardView(booking: booking)
                             }
                         }
-                    }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadHistory()
@@ -78,6 +79,7 @@ struct ServiceHistoryView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadHistory()
         }

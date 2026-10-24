@@ -35,7 +35,7 @@ struct PortalView: View {
                 // Featured Services
                 featuredServicesSection
             }
-            .padding(.bottom, 24)
+            .bottomDockClearance()
         }
         .refreshable {
             await loadPortalData()

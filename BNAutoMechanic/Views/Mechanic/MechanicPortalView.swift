@@ -54,7 +54,7 @@ struct MechanicPortalView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
-                    .padding(.bottom, 32)
+                    .bottomDockClearance()
                 }
                 .refreshable {
                     await loadMechanicData()
@@ -87,7 +87,7 @@ struct MechanicPortalView: View {
                 .background(Color.cardDarkElevated)
                 .cornerRadius(20)
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.primaryGold.opacity(0.5), lineWidth: 1))
-                .padding(.bottom, 20)
+                .padding(.bottom, CGFloat.bottomDockClearance + 12)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

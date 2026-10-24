@@ -66,8 +66,9 @@ struct InvoicesView: View {
                                 invoiceCard(invoice)
                             }
                         }
-                    }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadInvoices()
@@ -78,6 +79,7 @@ struct InvoicesView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadInvoices()
         }
@@ -260,12 +262,13 @@ struct InvoiceDetailView: View {
                     .luxuryCard()
                 }
                 .padding(16)
-                .padding(.bottom, 32)
+                .padding(.bottom, 36)
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
     }
 }

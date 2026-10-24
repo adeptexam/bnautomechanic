@@ -71,7 +71,7 @@ struct StaffDispatcherAdminView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 14)
-                    .padding(.bottom, 28)
+                    .bottomDockClearance()
                 }
                 .refreshable {
                     await loadDispatcherData()

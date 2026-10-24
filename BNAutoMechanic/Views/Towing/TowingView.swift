@@ -168,13 +168,14 @@ struct TowingView: View {
                     .luxuryCard()
                 }
                 .padding(16)
-                .padding(.bottom, 32)
+                .padding(.bottom, 36)
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .sheet(isPresented: $showBookingSheet) {
             BookAppointmentView(preselectedServiceId: 4)
         }
@@ -249,8 +250,9 @@ struct TowingStatusView: View {
                                 BookingCardView(booking: booking)
                             }
                         }
-                    }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadTowing()
@@ -261,6 +263,7 @@ struct TowingStatusView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadTowing()
         }

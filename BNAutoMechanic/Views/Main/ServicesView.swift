@@ -128,7 +128,7 @@ struct ServicesView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
-                    .padding(.bottom, 24)
+                    .bottomDockClearance()
                 }
                 .refreshable {
                     await loadServices()

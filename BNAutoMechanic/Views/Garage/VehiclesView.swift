@@ -93,8 +93,9 @@ struct VehiclesView: View {
                         ForEach(vehicles) { vehicle in
                             vehicleCard(vehicle)
                         }
-                    }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadVehicles()
@@ -105,6 +106,7 @@ struct VehiclesView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadVehicles()
         }

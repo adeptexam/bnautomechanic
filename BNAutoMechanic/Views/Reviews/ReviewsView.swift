@@ -86,7 +86,7 @@ struct ReviewsView: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 36)
             }
             .refreshable {
                 await loadReviews()
@@ -96,6 +96,7 @@ struct ReviewsView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadReviews()
         }

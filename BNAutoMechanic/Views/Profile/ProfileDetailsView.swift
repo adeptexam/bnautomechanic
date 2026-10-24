@@ -111,13 +111,14 @@ struct ProfileDetailsView: View {
                     .padding(.top, 12)
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 32)
+                .padding(.bottom, 36)
             }
         }
         .background(Color.bgDark.ignoresSafeArea())
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .onAppear {
             if let user = session.currentUser {
                 name = user.name

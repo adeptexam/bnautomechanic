@@ -197,7 +197,7 @@ struct ServiceDetailView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
-                    .padding(.bottom, 32)
+                    .padding(.bottom, 36)
                 }
             }
         }
@@ -205,6 +205,7 @@ struct ServiceDetailView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .sheet(isPresented: $showBookingWizard) {
             BookAppointmentView(preselectedServiceId: serviceId)
         }

@@ -74,8 +74,9 @@ struct NotificationsView: View {
                                 notificationCard(notif)
                             }
                         }
-                    }
-                    .padding(16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadNotifications()
@@ -86,6 +87,7 @@ struct NotificationsView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadNotifications()
         }

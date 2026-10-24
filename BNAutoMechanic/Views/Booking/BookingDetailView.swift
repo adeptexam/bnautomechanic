@@ -90,7 +90,7 @@ struct BookingDetailView: View {
                         }
                     }
                     .padding(16)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 36)
                 }
                 .refreshable {
                     await loadDetails()
@@ -106,6 +106,7 @@ struct BookingDetailView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadDetails()
         }

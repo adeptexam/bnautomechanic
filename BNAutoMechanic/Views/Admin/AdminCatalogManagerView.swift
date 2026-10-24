@@ -90,7 +90,7 @@ struct AdminCatalogManagerView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
-                    .padding(.bottom, 32)
+                    .bottomDockClearance()
                 }
                 .refreshable {
                     await loadCatalogData()

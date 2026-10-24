@@ -75,7 +75,7 @@ struct ChatListView: View {
                             Divider().background(Color.borderSubtle).padding(.leading, 64)
                         }
                     }
-                    .padding(.bottom, 24)
+                    .bottomDockClearance()
                 }
                 .refreshable {
                     await loadRooms()
@@ -268,6 +268,7 @@ struct ChatRoomView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadMessages()
             startPolling()

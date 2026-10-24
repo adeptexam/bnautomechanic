@@ -93,7 +93,13 @@ struct MainTabView: View {
             .toolbar(.hidden, for: .tabBar)
             #endif
             .safeAreaInset(edge: .bottom) {
-                customFloatingBottomBar
+                if !session.isTabBarHidden {
+                    customFloatingBottomBar
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                }
             }
             .ignoresSafeArea(.keyboard, edges: .bottom)
 
@@ -102,8 +108,12 @@ struct MainTabView: View {
                 previewReturnBanner
             }
         }
+        .onChange(of: selectedTab) { _ in
+            session.setTabBarHidden(false)
+        }
         .onChange(of: session.activePortalMode) { _ in
             selectedTab = 0
+            session.setTabBarHidden(false)
         }
     }
 

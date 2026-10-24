@@ -22,6 +22,7 @@ class SessionManager: ObservableObject {
     @Published var isLoggedIn: Bool = false
     @Published var currentUser: User? = nil
     @Published var activePortalMode: PortalMode = .customer
+    @Published var isTabBarHidden: Bool = false
 
     private init() {
         self.isLoggedIn = defaults.bool(forKey: loggedInKey)
@@ -47,6 +48,14 @@ class SessionManager: ObservableObject {
     func setPortalMode(_ mode: PortalMode) {
         withAnimation {
             self.activePortalMode = mode
+        }
+    }
+
+    func setTabBarHidden(_ hidden: Bool) {
+        if self.isTabBarHidden != hidden {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                self.isTabBarHidden = hidden
+            }
         }
     }
 

@@ -161,6 +161,7 @@ struct BookAppointmentView: View {
         #if os(iOS)
         .toolbar(.hidden, for: .navigationBar)
         #endif
+        .hideBottomDockOnPush()
         .task {
             await loadInitialData()
         }
