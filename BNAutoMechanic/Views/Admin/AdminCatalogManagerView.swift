@@ -12,6 +12,7 @@ import UIKit
 #endif
 
 struct AdminCatalogManagerView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var session: SessionManager
 
     @State private var services: [Service] = []
@@ -158,7 +159,22 @@ struct AdminCatalogManagerView: View {
 
     // MARK: - Header
     private var catalogHeader: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.primaryGold)
+                    .frame(width: 36, height: 36)
+                    .background(Color.cardDarkElevated)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.borderSubtle, lineWidth: 1)
+                    )
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("CATALOG & PRICING")
                     .font(.system(size: 18, weight: .black))
@@ -601,16 +617,21 @@ struct AddOrEditServiceSheet: View {
 
         do {
             if let s = service {
-                let dict: [String: Any] = [
+                var dict: [String: Any] = [
                     "name": name,
                     "category_id": categoryId,
                     "price": p,
-                    "sale_price": sp as Any,
                     "duration_minutes": dur,
                     "featured": featured,
                     "description": description,
                     "warranty_info": warrantyInfo
                 ]
+                if let sp = sp {
+                    dict["sale_price"] = sp
+                }
+                if !includedItems.isEmpty {
+                    dict["included_items"] = includedItems.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                }
                 _ = try await api.updateService(id: s.id, data: dict)
             } else {
                 let req = CreateServiceRequest(

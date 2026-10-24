@@ -102,6 +102,9 @@ struct MainTabView: View {
                 previewReturnBanner
             }
         }
+        .onChange(of: session.activePortalMode) { _ in
+            selectedTab = 0
+        }
     }
 
     // MARK: - Superadmin Tabs

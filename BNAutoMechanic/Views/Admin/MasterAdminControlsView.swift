@@ -108,7 +108,22 @@ struct MasterAdminControlsView: View {
     // MARK: - Header Banner
     private var headerBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primaryGold)
+                        .frame(width: 36, height: 36)
+                        .background(Color.cardDarkElevated)
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.borderSubtle, lineWidth: 1)
+                        )
+                }
+
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.primaryGold.opacity(0.15))

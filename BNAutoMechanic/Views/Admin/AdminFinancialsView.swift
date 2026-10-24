@@ -13,6 +13,7 @@ import UIKit
 #endif
 
 struct AdminFinancialsView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var session: SessionManager
 
     @State private var selectedTab: Int = 0 // 0: Invoices & Cash, 1: Deals & Coupons, 2: Reviews, 3: Emergency Towing
@@ -144,7 +145,22 @@ struct AdminFinancialsView: View {
 
     // MARK: - Header
     private var financialHeader: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(.primaryGold)
+                    .frame(width: 36, height: 36)
+                    .background(Color.cardDarkElevated)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.borderSubtle, lineWidth: 1)
+                    )
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("OPERATIONS & FINANCIALS")
                     .font(.system(size: 18, weight: .black))

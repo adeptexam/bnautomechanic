@@ -130,6 +130,8 @@ class APIService {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("ios", forHTTPHeaderField: "X-Platform")
+        request.setValue("2.0.0", forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
 
         if let token = SessionManager.shared.getToken() {
@@ -477,6 +479,8 @@ class APIService {
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("ios", forHTTPHeaderField: "X-Platform")
+        request.setValue("2.0.0", forHTTPHeaderField: "X-App-Version")
         request.timeoutInterval = 15
 
         if let token = SessionManager.shared.getToken() {
@@ -484,7 +488,12 @@ class APIService {
         }
 
         if let jsonBody = jsonBody {
-            request.httpBody = try JSONSerialization.data(withJSONObject: jsonBody, options: [])
+            // Filter out any Swift nil optionals to prevent JSONSerialization write failure
+            let sanitized = jsonBody.compactMapValues { val -> Any? in
+                if case Optional<Any>.none = val { return nil }
+                return val
+            }
+            request.httpBody = try JSONSerialization.data(withJSONObject: sanitized, options: [])
         }
 
         let (data, response) = try await session.data(for: request)
@@ -798,15 +807,6 @@ struct ApiErrorResponse: Codable {
     let success: Bool?
     let message: String?
     let error: ApiErrorDetail?
-}
-
-extension Dictionary: @retroactive Encodable where Key == String, Value == String {
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: DynamicCodingKeys.self)
-        for (key, value) in self {
-            try container.encode(value, forKey: DynamicCodingKeys(stringValue: key)!)
-        }
-    }
 }
 
 struct DynamicCodingKeys: CodingKey {

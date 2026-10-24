@@ -437,8 +437,50 @@ struct Vehicle: Codable, Identifiable {
     }
 
     func displayName() -> String {
-        let reg = (registrationNumber?.isEmpty == false) ? " (\(registrationNumber!))" : ""
-        return "\(year) \(make) \(model)\(reg)"
+        if let reg = registrationNumber, !reg.isEmpty {
+            return "\(year) \(make) \(model) (\(reg))"
+        }
+        return "\(year) \(make) \(model)"
+    }
+
+    init(
+        id: Int,
+        userId: Int? = nil,
+        make: String,
+        model: String,
+        variant: String? = nil,
+        year: Int,
+        registrationNumber: String? = nil,
+        engineNumber: String? = nil,
+        vin: String? = nil,
+        mileage: Int? = nil,
+        fuelType: String? = nil,
+        transmission: String? = nil,
+        color: String? = nil,
+        vehicleType: String? = nil,
+        notes: String? = nil,
+        mechanicId: Int? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.id = id
+        self.userId = userId
+        self.make = make
+        self.model = model
+        self.variant = variant
+        self.year = year
+        self.registrationNumber = registrationNumber
+        self.engineNumber = engineNumber
+        self.vin = vin
+        self.mileage = mileage
+        self.fuelType = fuelType
+        self.transmission = transmission
+        self.color = color
+        self.vehicleType = vehicleType
+        self.notes = notes
+        self.mechanicId = mechanicId
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 }
 
@@ -667,6 +709,112 @@ struct Service: Codable, Identifiable {
         try container.encodeIfPresent(category, forKey: .category)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
         try container.encodeIfPresent(updatedAt, forKey: .updatedAt)
+    }
+
+    init(
+        id: Int,
+        name: String,
+        slug: String? = nil,
+        status: String? = nil,
+        featured: Bool? = nil,
+        imageUrl: String? = nil,
+        categoryId: Int? = nil,
+        category: ServiceCategory? = nil,
+        description: String? = nil,
+        shortDescription: String? = nil,
+        basePrice: Double? = nil,
+        salePrice: Double? = nil,
+        durationMinutes: Int? = nil,
+        displayOrder: Int? = nil,
+        warrantyInfo: String? = nil,
+        benefits: [String]? = nil,
+        includedItems: [String]? = nil,
+        faqs: [ServiceFaq]? = nil,
+        ratingAverage: Double? = nil,
+        reviewsCount: Int? = nil,
+        features: [String]? = nil,
+        tags: [String]? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.slug = slug
+        self.status = status
+        self.featured = featured
+        self.imageUrl = imageUrl
+        self.categoryId = categoryId
+        self.category = category
+        self.description = description
+        self.shortDescription = shortDescription
+        self.basePrice = basePrice
+        self.salePrice = salePrice
+        self.durationMinutes = durationMinutes
+        self.displayOrder = displayOrder
+        self.warrantyInfo = warrantyInfo
+        self.benefits = benefits
+        self.includedItems = includedItems
+        self.faqs = faqs
+        self.ratingAverage = ratingAverage
+        self.reviewsCount = reviewsCount
+        self.features = features
+        self.tags = tags
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    init(
+        id: Int,
+        categoryId: Int?,
+        name: String,
+        slug: String? = nil,
+        description: String? = nil,
+        shortDescription: String? = nil,
+        imageUrl: String? = nil,
+        basePrice: Double? = nil,
+        salePrice: Double? = nil,
+        durationMinutes: Int? = nil,
+        featured: Bool? = nil,
+        status: String? = nil,
+        displayOrder: Int? = nil,
+        includedItems: [String]? = nil,
+        warrantyInfo: String? = nil,
+        benefits: [String]? = nil,
+        faqs: [ServiceFaq]? = nil,
+        ratingAverage: Double? = nil,
+        reviewsCount: Int? = nil,
+        features: [String]? = nil,
+        tags: [String]? = nil,
+        category: ServiceCategory? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.init(
+            id: id,
+            name: name,
+            slug: slug,
+            status: status,
+            featured: featured,
+            imageUrl: imageUrl,
+            categoryId: categoryId,
+            category: category,
+            description: description,
+            shortDescription: shortDescription,
+            basePrice: basePrice,
+            salePrice: salePrice,
+            durationMinutes: durationMinutes,
+            displayOrder: displayOrder,
+            warrantyInfo: warrantyInfo,
+            benefits: benefits,
+            includedItems: includedItems,
+            faqs: faqs,
+            ratingAverage: ratingAverage,
+            reviewsCount: reviewsCount,
+            features: features,
+            tags: tags,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
     }
 
     func formattedDuration() -> String {
@@ -1136,6 +1284,70 @@ struct Booking: Codable, Identifiable {
         let reschedulable = ["PENDING", "APPROVED_FOR_ESTIMATE", "ESTIMATE_SENT", "ESTIMATE_REJECTED", "CONFIRMED"]
         return reschedulable.contains(status.uppercased())
     }
+
+    init(
+        id: Int,
+        reference: String,
+        status: String,
+        userId: Int? = nil,
+        vehicleId: Int? = nil,
+        mechanicId: Int? = nil,
+        scheduledDate: String,
+        scheduledTime: String,
+        notes: String? = nil,
+        totalAmount: Double? = nil,
+        paymentStatus: String? = nil,
+        amountPaid: Double? = nil,
+        balanceDue: Double? = nil,
+        customerName: String? = nil,
+        customerEmail: String? = nil,
+        customerPhone: String? = nil,
+        services: [BookingService]? = nil,
+        vehicle: Vehicle? = nil,
+        towing: TowingDetails? = nil,
+        estimate: Estimate? = nil,
+        extras: [BookingExtra]? = nil,
+        coupon: AppliedCoupon? = nil,
+        invoiceId: Int? = nil,
+        declineReason: String? = nil,
+        cancelReason: String? = nil,
+        startedAt: String? = nil,
+        completedAt: String? = nil,
+        adminNotes: String? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.id = id
+        self.reference = reference
+        self.status = status
+        self.userId = userId
+        self.vehicleId = vehicleId
+        self.mechanicId = mechanicId
+        self.scheduledDate = scheduledDate
+        self.scheduledTime = scheduledTime
+        self.notes = notes
+        self.totalAmount = totalAmount
+        self.paymentStatus = paymentStatus
+        self.amountPaid = amountPaid
+        self.balanceDue = balanceDue
+        self.customerName = customerName
+        self.customerEmail = customerEmail
+        self.customerPhone = customerPhone
+        self.services = services
+        self.vehicle = vehicle
+        self.towing = towing
+        self.estimate = estimate
+        self.extras = extras
+        self.coupon = coupon
+        self.invoiceId = invoiceId
+        self.declineReason = declineReason
+        self.cancelReason = cancelReason
+        self.startedAt = startedAt
+        self.completedAt = completedAt
+        self.adminNotes = adminNotes
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 struct CreateBookingRequest: Codable {
@@ -1548,6 +1760,46 @@ struct Invoice: Codable, Identifiable {
             try container.encode(raw, forKey: .items)
         }
     }
+
+    init(
+        id: Int,
+        invoiceNumber: String,
+        userId: Int? = nil,
+        vehicleId: Int? = nil,
+        bookingId: Int? = nil,
+        bookingReference: String? = nil,
+        items: [InvoiceItem]? = nil,
+        itemsRaw: String? = nil,
+        subtotal: Double? = nil,
+        discount: Double? = nil,
+        tax: Double? = nil,
+        total: Double? = nil,
+        amountPaid: Double? = nil,
+        status: String? = nil,
+        issuedAt: String? = nil,
+        dueDate: String? = nil,
+        createdAt: String? = nil,
+        updatedAt: String? = nil
+    ) {
+        self.id = id
+        self.invoiceNumber = invoiceNumber
+        self.userId = userId
+        self.vehicleId = vehicleId
+        self.bookingId = bookingId
+        self.bookingReference = bookingReference
+        self.items = items
+        self.itemsRaw = itemsRaw
+        self.subtotal = subtotal
+        self.discount = discount
+        self.tax = tax
+        self.total = total
+        self.amountPaid = amountPaid
+        self.status = status
+        self.issuedAt = issuedAt
+        self.dueDate = dueDate
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 // MARK: - Table: payments
@@ -1716,6 +1968,48 @@ struct Review: Codable, Identifiable {
         try container.encodeIfPresent(verifiedCustomer, forKey: .verifiedCustomer)
         try container.encodeIfPresent(bookingReference, forKey: .bookingReference)
         try container.encodeIfPresent(response, forKey: .response)
+    }
+
+    init(
+        id: Int,
+        bookingId: Int? = nil,
+        serviceId: Int? = nil,
+        serviceName: String? = nil,
+        userId: Int? = nil,
+        customerName: String? = nil,
+        customerAvatarUrl: String? = nil,
+        rating: Int,
+        comment: String? = nil,
+        status: String? = "active",
+        createdAt: String? = nil,
+        updatedAt: String? = nil,
+        source: String? = nil,
+        googleReviewId: String? = nil,
+        reviewDate: String? = nil,
+        editedLocally: Bool? = nil,
+        verifiedCustomer: Bool? = nil,
+        bookingReference: String? = nil,
+        response: String? = nil
+    ) {
+        self.id = id
+        self.bookingId = bookingId
+        self.serviceId = serviceId
+        self.serviceName = serviceName
+        self.userId = userId
+        self.customerName = customerName
+        self.customerAvatarUrl = customerAvatarUrl
+        self.rating = rating
+        self.comment = comment
+        self.status = status
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.source = source
+        self.googleReviewId = googleReviewId
+        self.reviewDate = reviewDate
+        self.editedLocally = editedLocally
+        self.verifiedCustomer = verifiedCustomer
+        self.bookingReference = bookingReference
+        self.response = response
     }
 }
 
