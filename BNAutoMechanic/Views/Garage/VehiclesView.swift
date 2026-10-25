@@ -93,6 +93,7 @@ struct VehiclesView: View {
                         ForEach(vehicles) { vehicle in
                             vehicleCard(vehicle)
                         }
+                    }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .padding(.bottom, 36)
