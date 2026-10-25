@@ -66,6 +66,7 @@ struct ServiceHistoryView: View {
                                 BookingCardView(booking: booking)
                             }
                         }
+                    }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .padding(.bottom, 36)

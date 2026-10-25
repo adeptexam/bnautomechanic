@@ -74,6 +74,7 @@ struct NotificationsView: View {
                                 notificationCard(notif)
                             }
                         }
+                    }
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
                     .padding(.bottom, 36)
