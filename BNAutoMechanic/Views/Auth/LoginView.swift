@@ -199,11 +199,11 @@ struct LoginView: View {
                         }
                     }
 
-                    session.saveAuth(token: token, user: resolvedUser)
+                    session.saveSession(accessToken: token, refreshToken: authData.refreshToken, user: resolvedUser)
 
                     // Also fetch live user info from /users/me asynchronously to ensure full live backend role sync
                     if let meResp = try? await APIService.shared.getCurrentUser(), let meUser = meResp.data {
-                        session.saveAuth(token: token, user: meUser)
+                        session.saveSession(accessToken: token, refreshToken: authData.refreshToken, user: meUser)
                     }
                 } else {
                     await MainActor.run {
@@ -378,7 +378,7 @@ struct RegisterView: View {
                         role: "CUSTOMER",
                         status: "ACTIVE"
                     )
-                    session.saveAuth(token: token, user: user)
+                    session.saveSession(accessToken: token, refreshToken: authData.refreshToken, user: user)
                 } else {
                     await MainActor.run {
                         errorMessage = response.message ?? "Registration failed. Please check your information."

@@ -177,6 +177,40 @@ struct ProfileView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
 
+                // Section 5: Account Privacy & Deletion (App Store Guideline 5.1.1(v))
+                sectionHeader(title: "ACCOUNT GOVERNANCE & PRIVACY")
+                VStack(spacing: 0) {
+                    NavigationLink(destination: ProfileDetailsView()) {
+                        profileMenuRow(icon: "person.crop.circle.badge.checkmark", title: "Edit Account Profile & Details")
+                    }
+                    menuDivider
+
+                    NavigationLink(destination: ProfileDetailsView()) {
+                        HStack(spacing: 14) {
+                            Image(systemName: "trash.fill")
+                                .font(.system(size: 15))
+                                .foregroundColor(.statusCancelled)
+                                .frame(width: 24, height: 24)
+
+                            Text("Delete Account Permanently (Self-Service)")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.statusCancelled)
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.textSubtle)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(Rectangle())
+                    }
+                }
+                .luxuryCard()
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
                 // Logout Button
                 Button(action: { showLogoutAlert = true }) {
                     HStack(spacing: 10) {

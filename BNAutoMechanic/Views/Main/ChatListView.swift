@@ -181,8 +181,22 @@ struct ChatRoomView: View {
     @State private var isLoading = true
     @Environment(\.dismiss) var dismiss
 
+    @ObservedObject private var moderation = ContentModerationManager.shared
+    @State private var showReportAlert = false
+    @State private var showBlockAlert = false
+    @State private var inputFilterError: String?
+    @State private var statusToastMessage: String?
+    @State private var showStatusToast = false
+
     private var currentUserId: Int {
         SessionManager.shared.getUser()?.id ?? 0
+    }
+
+    private var visibleMessages: [ChatMessage] {
+        messages.filter { msg in
+            !moderation.isContentReported(contentId: "msg_\(msg.id)") &&
+            !moderation.isUserBlocked(name: msg.senderName, id: msg.senderId)
+        }
     }
 
     var body: some View {
@@ -210,6 +224,26 @@ struct ChatRoomView: View {
                 }
 
                 Spacer()
+
+                // Apple Guideline 1.2 UGC Safety & Moderation Menu
+                Menu {
+                    Button(role: .destructive) {
+                        showReportAlert = true
+                    } label: {
+                        Label("Report Conversation", systemImage: "flag")
+                    }
+
+                    Button(role: .destructive) {
+                        showBlockAlert = true
+                    } label: {
+                        Label("Block Participant", systemImage: "hand.raised.slash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.system(size: 18))
+                        .foregroundColor(.textMuted)
+                        .frame(width: 36, height: 36)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
@@ -217,11 +251,27 @@ struct ChatRoomView: View {
 
             Divider().background(Color.borderSubtle)
 
+            // Status Toast
+            if showStatusToast, let toast = statusToastMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .foregroundColor(.statusCompleted)
+                    Text(toast)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.textForeground)
+                    Spacer()
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.cardDarkElevated)
+                .padding(.horizontal, 16)
+            }
+
             // Messages
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(messages) { msg in
+                        ForEach(visibleMessages) { msg in
                             chatBubble(msg)
                                 .id(msg.id)
                         }
@@ -230,12 +280,20 @@ struct ChatRoomView: View {
                     .padding(.vertical, 12)
                 }
                 .onChange(of: messages.count) { _ in
-                    if let last = messages.last {
+                    if let last = visibleMessages.last {
                         withAnimation {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
                     }
                 }
+            }
+
+            if let err = inputFilterError {
+                Text(err)
+                    .font(.system(size: 11))
+                    .foregroundColor(.statusCancelled)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
             }
 
             Divider().background(Color.borderSubtle)
@@ -273,6 +331,37 @@ struct ChatRoomView: View {
             await loadMessages()
             startPolling()
         }
+        .alert("Report Conversation", isPresented: $showReportAlert) {
+            Button("Report Spam or Abuse", role: .destructive) {
+                moderation.reportContent(contentId: "room_\(roomId)", contentType: "ChatRoom", reason: "Abuse or Spam")
+                showToast("Conversation reported to workshop supervisors.")
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Help us keep our community respectful. This conversation transcript will be flagged for review by our operations supervisor.")
+        }
+        .alert("Block Participant", isPresented: $showBlockAlert) {
+            Button("Block", role: .destructive) {
+                moderation.blockUser(name: "Advisor", id: nil)
+                showToast("Participant blocked. Messages hidden.")
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to block this sender? Their messages will no longer appear in your feed.")
+        }
+    }
+
+    private func showToast(_ text: String) {
+        withAnimation {
+            statusToastMessage = text
+            showStatusToast = true
+        }
+        Task {
+            try? await Task.sleep(nanoseconds: 3_000_000_000)
+            await MainActor.run {
+                withAnimation { showStatusToast = false }
+            }
+        }
     }
 
     private func chatBubble(_ msg: ChatMessage) -> some View {
@@ -294,6 +383,23 @@ struct ChatRoomView: View {
                     .padding(.vertical, 10)
                     .background(isMe ? Color.primaryGold : Color.cardDarkElevated)
                     .cornerRadius(16)
+                    .contextMenu {
+                        if !isMe {
+                            Button(role: .destructive) {
+                                moderation.reportContent(contentId: "msg_\(msg.id)", contentType: "ChatMessage", reason: "Inappropriate Message")
+                                showToast("Message reported and hidden.")
+                            } label: {
+                                Label("Report Message", systemImage: "flag")
+                            }
+
+                            Button(role: .destructive) {
+                                moderation.blockUser(name: msg.senderName, id: msg.senderId)
+                                showToast("User blocked.")
+                            } label: {
+                                Label("Block User", systemImage: "hand.raised.slash")
+                            }
+                        }
+                    }
 
                 if let time = msg.createdAt {
                     Text(time)
@@ -309,6 +415,14 @@ struct ChatRoomView: View {
     private func sendMessage() {
         let text = messageText.trimmingCharacters(in: .whitespaces)
         guard !text.isEmpty, text.count <= 250 else { return }
+
+        // Apple Guideline 1.2 Pre-submission Check
+        let check = moderation.containsObjectionableContent(text)
+        if check.isObjectionable {
+            inputFilterError = check.reason
+            return
+        }
+        inputFilterError = nil
 
         let localMsg = ChatMessage(
             id: Int.random(in: 1000...9999),

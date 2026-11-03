@@ -19,6 +19,7 @@ struct BookingDetailView: View {
     @State private var showCancelAlert = false
     @State private var showDeclineEstimateSheet = false
     @State private var showAdminDetailSheet = false
+    @State private var showPaymentSheet = false
     @State private var declineReason = ""
     @State private var newScheduledDate = Date()
     @State private var newScheduledTime = "10:00 AM"
@@ -76,6 +77,11 @@ struct BookingDetailView: View {
                             estimateCard(est, booking: b)
                         }
 
+                        // Technician Extras / Additional Recommended Items
+                        if let extras = b.extras, !extras.isEmpty {
+                            extrasCard(b, extras: extras)
+                        }
+
                         // Financial Billing Breakdown
                         billingCard(b)
 
@@ -121,6 +127,13 @@ struct BookingDetailView: View {
                 AdminBookingDetailSheet(booking: b) {
                     Task { await loadDetails() }
                 }
+            }
+        }
+        .sheet(isPresented: $showPaymentSheet) {
+            if let b = booking {
+                PaymentGatewaySheet(booking: b, onPaymentCompleted: {
+                    Task { await loadDetails() }
+                })
             }
         }
         .alert("Cancel Appointment", isPresented: $showCancelAlert) {
@@ -324,6 +337,22 @@ struct BookingDetailView: View {
                 Text(String(format: "$%.2f", b.balanceDue ?? (b.totalAmount ?? 0.0)))
                     .font(.system(size: 16, weight: .black))
                     .foregroundColor(.primaryGold)
+            }
+
+            if (b.balanceDue ?? b.totalAmount ?? 0.0) > 0 && b.paymentStatus != "PAID" {
+                Button(action: { showPaymentSheet = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "creditcard.fill")
+                        Text("Pay Balance Now (\(String(format: "$%.2f", b.balanceDue ?? b.totalAmount ?? 0.0)))")
+                    }
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.bgDark)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.primaryGold)
+                    .cornerRadius(8)
+                }
+                .padding(.top, 4)
             }
         }
         .padding(16)
@@ -537,6 +566,100 @@ struct BookingDetailView: View {
     private func cancelBooking() {
         Task {
             _ = try? await APIService.shared.cancelBooking(id: bookingId, reason: "Customer requested cancellation")
+            await loadDetails()
+        }
+    }
+
+    // MARK: - Extras Card (Customer Approval / Decline of Technician Quote Items)
+    private func extrasCard(_ b: Booking, extras: [BookingExtra]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ADDITIONAL TECHNICIAN QUOTE ITEMS")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.primaryGold)
+                        .tracking(0.6)
+                    Text("Service Bay Findings & Approvals")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.textForeground)
+                }
+                Spacer()
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .foregroundColor(.primaryGold)
+                    .font(.system(size: 16))
+            }
+
+            ForEach(extras) { item in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.textForeground)
+                            if let cost = item.cost {
+                                Text(String(format: "$%.2f", cost))
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.primaryGold)
+                            }
+                        }
+
+                        Spacer()
+
+                        let status = item.status?.uppercased() ?? "PENDING"
+                        Text(status)
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundColor(status == "APPROVED" ? .statusConfirmed : (status == "DECLINED" ? .statusCancelled : .statusWarning))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.cardDarkElevated)
+                            .cornerRadius(4)
+                    }
+
+                    if (item.status?.uppercased() ?? "PENDING") == "PENDING" {
+                        HStack(spacing: 8) {
+                            Button(action: { declineExtra(item.id) }) {
+                                Text("Decline")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.statusCancelled)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 32)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color.statusCancelled, lineWidth: 1)
+                                    )
+                            }
+
+                            Button(action: { approveExtra(item.id) }) {
+                                Text("Approve Extra")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.bgDark)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 32)
+                                    .background(Color.primaryGold)
+                                    .cornerRadius(6)
+                            }
+                        }
+                    }
+                }
+                .padding(10)
+                .background(Color.cardDarkElevated)
+                .cornerRadius(8)
+            }
+        }
+        .padding(16)
+        .luxuryCard()
+    }
+
+    private func approveExtra(_ extraId: Int) {
+        Task {
+            _ = try? await APIService.shared.approveBookingExtra(bookingId: bookingId, extraId: extraId)
+            await loadDetails()
+        }
+    }
+
+    private func declineExtra(_ extraId: Int) {
+        Task {
+            _ = try? await APIService.shared.declineBookingExtra(bookingId: bookingId, extraId: extraId)
             await loadDetails()
         }
     }

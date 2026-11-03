@@ -15,6 +15,7 @@ class SessionManager: ObservableObject {
     static let shared = SessionManager()
 
     private let tokenKey = "auth_token"
+    private let refreshTokenKey = "auth_refresh_token"
     private let userKey = "current_user"
     private let loggedInKey = "is_logged_in"
     private let defaults = UserDefaults.standard
@@ -60,7 +61,14 @@ class SessionManager: ObservableObject {
     }
 
     func saveSession(token: String, user: User?) {
-        defaults.set(token, forKey: tokenKey)
+        saveSession(accessToken: token, refreshToken: nil, user: user)
+    }
+
+    func saveSession(accessToken: String, refreshToken: String? = nil, user: User? = nil) {
+        defaults.set(accessToken, forKey: tokenKey)
+        if let rt = refreshToken, !rt.isEmpty {
+            defaults.set(rt, forKey: refreshTokenKey)
+        }
         defaults.set(true, forKey: loggedInKey)
         if let user = user,
            let encoded = try? JSONEncoder().encode(user) {
@@ -68,25 +76,53 @@ class SessionManager: ObservableObject {
         }
         DispatchQueue.main.async {
             self.isLoggedIn = true
-            self.currentUser = user
-            self.syncPortalMode()
+            if let user = user {
+                self.currentUser = user
+                self.syncPortalMode()
+            }
         }
+    }
+
+    func saveAuth(token: String, user: User?) {
+        saveSession(accessToken: token, refreshToken: nil, user: user)
+    }
+
+    func saveAuth(accessToken: String, refreshToken: String?, user: User?) {
+        saveSession(accessToken: accessToken, refreshToken: refreshToken, user: user)
     }
 
     func getToken() -> String? {
         return defaults.string(forKey: tokenKey)
     }
 
+    func getRefreshToken() -> String? {
+        return defaults.string(forKey: refreshTokenKey)
+    }
+
+    func updateTokens(accessToken: String, refreshToken: String?) {
+        defaults.set(accessToken, forKey: tokenKey)
+        if let rt = refreshToken, !rt.isEmpty {
+            defaults.set(rt, forKey: refreshTokenKey)
+        }
+    }
+
+    func updateUser(_ user: User) {
+        if let encoded = try? JSONEncoder().encode(user) {
+            defaults.set(encoded, forKey: userKey)
+        }
+        DispatchQueue.main.async {
+            self.currentUser = user
+            self.syncPortalMode()
+        }
+    }
+
     func getUser() -> User? {
         return currentUser
     }
 
-    func saveAuth(token: String, user: User?) {
-        saveSession(token: token, user: user)
-    }
-
     func logout() {
         defaults.removeObject(forKey: tokenKey)
+        defaults.removeObject(forKey: refreshTokenKey)
         defaults.removeObject(forKey: userKey)
         defaults.set(false, forKey: loggedInKey)
         DispatchQueue.main.async {
@@ -97,10 +133,67 @@ class SessionManager: ObservableObject {
     }
 }
 
+// MARK: - Thread-Safe Token Refresh Coordinator
+actor TokenRefreshCoordinator {
+    static let shared = TokenRefreshCoordinator()
+    private var refreshTask: Task<String, Error>?
+
+    func refreshToken(baseURL: String, refreshToken: String) async throws -> String {
+        if let existing = refreshTask {
+            return try await existing.value
+        }
+
+        let task = Task<String, Error> {
+            guard let url = URL(string: baseURL + "auth/refresh") else {
+                throw APIError.invalidURL
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("ios", forHTTPHeaderField: "X-Platform")
+            request.setValue("2.0.0", forHTTPHeaderField: "X-App-Version")
+            request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": refreshToken])
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                throw APIError.unauthorized
+            }
+
+            struct RefreshResponse: Codable {
+                let success: Bool?
+                let data: TokenPayload?
+                struct TokenPayload: Codable {
+                    let accessToken: String?
+                    let refreshToken: String?
+                    enum CodingKeys: String, CodingKey {
+                        case accessToken = "access_token"
+                        case refreshToken = "refresh_token"
+                    }
+                }
+            }
+
+            let decoded = try JSONDecoder().decode(RefreshResponse.self, from: data)
+            guard let newAccess = decoded.data?.accessToken else {
+                throw APIError.unauthorized
+            }
+            let newRefresh = decoded.data?.refreshToken ?? refreshToken
+            await MainActor.run {
+                SessionManager.shared.updateTokens(accessToken: newAccess, refreshToken: newRefresh)
+            }
+            return newAccess
+        }
+
+        self.refreshTask = task
+        defer { self.refreshTask = nil }
+        return try await task.value
+    }
+}
+
 // MARK: - API Service
 class APIService {
     static let shared = APIService()
-    private let baseURL = "https://api.bnautomechanic.net/api/v1/"
+    private let baseURL = "https://api.bnautomechanic.net/api/v2/"
     private let session = URLSession.shared
     private let decoder: JSONDecoder = {
         let d = JSONDecoder()
@@ -114,7 +207,8 @@ class APIService {
         endpoint: String,
         method: String = "GET",
         body: Encodable? = nil,
-        queryParams: [String: String]? = nil
+        queryParams: [String: String]? = nil,
+        isRetry: Bool = false
     ) async throws -> ApiResponse<T> {
         var urlString = baseURL + endpoint
 
@@ -158,7 +252,21 @@ class APIService {
         }
 
         if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
+            // Attempt silent token refresh if available and not a retry/auth request
+            if !isRetry && !endpoint.hasPrefix("auth/") && SessionManager.shared.getRefreshToken() != nil {
+                do {
+                    _ = try await TokenRefreshCoordinator.shared.refreshToken(baseURL: baseURL, refreshToken: SessionManager.shared.getRefreshToken()!)
+                    return try await makeRequest(endpoint: endpoint, method: method, body: body, queryParams: queryParams, isRetry: true)
+                } catch {
+                    await MainActor.run { SessionManager.shared.logout() }
+                    throw APIError.unauthorized
+                }
+            } else {
+                if !endpoint.hasPrefix("auth/") {
+                    await MainActor.run { SessionManager.shared.logout() }
+                }
+                throw APIError.unauthorized
+            }
         }
 
         // Try standard ApiResponse<T> decode
@@ -238,7 +346,23 @@ class APIService {
             }
         }
         let body = UpdateProfileRequest(name: name, phone: phone, address: address, city: city, state: state, postalCode: postalCode)
-        return try await makeRequest(endpoint: "users/me", method: "PUT", body: body)
+        let response: ApiResponse<User> = try await makeRequest(endpoint: "users/me", method: "PUT", body: body)
+        if let updatedUser = response.data {
+            await MainActor.run {
+                SessionManager.shared.updateUser(updatedUser)
+            }
+        }
+        return response
+    }
+
+    // MARK: - Customer Self Account Deletion (DELETE /users/me - App Store Guideline 5.1.1(v))
+    func deleteCustomerAccount(password: String? = nil, reason: String? = nil) async throws -> ApiResponse<AccountDeletionResult> {
+        let req = AccountDeletionRequest(password: password, reason: reason)
+        let res: ApiResponse<AccountDeletionResult> = try await makeRequest(endpoint: "users/me", method: "DELETE", body: req)
+        await MainActor.run {
+            SessionManager.shared.logout()
+        }
+        return res
     }
 
     // MARK: - Bookings & Estimates (bookings table)
@@ -337,6 +461,10 @@ class APIService {
 
     func deleteVehicle(id: Int) async throws -> ApiResponse<EmptyData> {
         return try await makeRequest(endpoint: "vehicles/\(id)", method: "DELETE")
+    }
+
+    func updateVehicle(id: Int, _ request: UpdateVehicleRequest) async throws -> ApiResponse<Vehicle> {
+        return try await makeRequest(endpoint: "vehicles/\(id)", method: "PATCH", body: request)
     }
 
     // MARK: - Towing Requests (towing_requests table)
@@ -463,7 +591,8 @@ class APIService {
         endpoint: String,
         method: String = "GET",
         jsonBody: [String: Any]? = nil,
-        queryParams: [String: String]? = nil
+        queryParams: [String: String]? = nil,
+        isRetry: Bool = false
     ) async throws -> ApiResponse<T> {
         var urlString = baseURL + endpoint
 
@@ -512,7 +641,20 @@ class APIService {
         }
 
         if httpResponse.statusCode == 401 {
-            throw APIError.unauthorized
+            if !isRetry && !endpoint.hasPrefix("auth/") && SessionManager.shared.getRefreshToken() != nil {
+                do {
+                    _ = try await TokenRefreshCoordinator.shared.refreshToken(baseURL: baseURL, refreshToken: SessionManager.shared.getRefreshToken()!)
+                    return try await makeRequestRaw(endpoint: endpoint, method: method, jsonBody: jsonBody, queryParams: queryParams, isRetry: true)
+                } catch {
+                    await MainActor.run { SessionManager.shared.logout() }
+                    throw APIError.unauthorized
+                }
+            } else {
+                if !endpoint.hasPrefix("auth/") {
+                    await MainActor.run { SessionManager.shared.logout() }
+                }
+                throw APIError.unauthorized
+            }
         }
 
         if let apiResponse = try? decoder.decode(ApiResponse<T>.self, from: data) {

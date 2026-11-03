@@ -2884,3 +2884,138 @@ struct CashReport: Codable {
         case reportDate = "report_date"
     }
 }
+
+// MARK: - Account Self-Deletion Models (App Store Guideline 5.1.1(v) & Backend /users/me)
+struct AccountDeletionRequest: Codable {
+    let password: String?
+    let reason: String?
+
+    init(password: String? = nil, reason: String? = nil) {
+        self.password = password
+        self.reason = reason
+    }
+}
+
+struct AccountDeletionResult: Codable {
+    let deleted: Bool?
+    let message: String?
+    let userId: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case deleted, message
+        case userId = "user_id"
+    }
+}
+
+// MARK: - Vehicle Update / Patch Model (PATCH /vehicles/{id})
+struct UpdateVehicleRequest: Codable {
+    let make: String?
+    let model: String?
+    let year: Int?
+    let variant: String?
+    let registrationNumber: String?
+    let engineNumber: String?
+    let vin: String?
+    let mileage: Int?
+    let fuelType: String?
+    let transmission: String?
+    let color: String?
+    let vehicleType: String?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case make, model, year, variant, vin, color, notes, mileage, transmission
+        case registrationNumber = "registration_number"
+        case engineNumber = "engine_number"
+        case fuelType = "fuel_type"
+        case vehicleType = "vehicle_type"
+    }
+
+    init(
+        make: String? = nil,
+        model: String? = nil,
+        year: Int? = nil,
+        variant: String? = nil,
+        registrationNumber: String? = nil,
+        engineNumber: String? = nil,
+        vin: String? = nil,
+        mileage: Int? = nil,
+        fuelType: String? = nil,
+        transmission: String? = nil,
+        color: String? = nil,
+        vehicleType: String? = nil,
+        notes: String? = nil
+    ) {
+        self.make = make
+        self.model = model
+        self.year = year
+        self.variant = variant
+        self.registrationNumber = registrationNumber
+        self.engineNumber = engineNumber
+        self.vin = vin
+        self.mileage = mileage
+        self.fuelType = fuelType
+        self.transmission = transmission
+        self.color = color
+        self.vehicleType = vehicleType
+        self.notes = notes
+    }
+}
+
+// MARK: - Payment Gateway Models
+struct CardPaymentDetails: Codable {
+    let cardNumber: String
+    let expiry: String
+    let cvv: String
+    let cardholderName: String
+    let zipCode: String?
+
+    init(cardNumber: String, expiry: String, cvv: String, cardholderName: String, zipCode: String? = nil) {
+        self.cardNumber = cardNumber
+        self.expiry = expiry
+        self.cvv = cvv
+        self.cardholderName = cardholderName
+        self.zipCode = zipCode
+    }
+}
+
+struct PaymentProcessRequest: Codable {
+    let bookingId: Int?
+    let invoiceId: Int?
+    let amount: Double
+    let method: String // "CARD", "BANK_TRANSFER", "QR", "CASH", "ONLINE"
+    let currency: String?
+    let referenceNote: String?
+    let cardLast4: String?
+    let cardBrand: String?
+
+    enum CodingKeys: String, CodingKey {
+        case amount, method, currency
+        case bookingId = "booking_id"
+        case invoiceId = "invoice_id"
+        case referenceNote = "reference_note"
+        case cardLast4 = "card_last4"
+        case cardBrand = "card_brand"
+    }
+
+    init(
+        bookingId: Int? = nil,
+        invoiceId: Int? = nil,
+        amount: Double,
+        method: String,
+        currency: String? = "USD",
+        referenceNote: String? = nil,
+        cardLast4: String? = nil,
+        cardBrand: String? = nil
+    ) {
+        self.bookingId = bookingId
+        self.invoiceId = invoiceId
+        self.amount = amount
+        self.method = method
+        self.currency = currency
+        self.referenceNote = referenceNote
+        self.cardLast4 = cardLast4
+        self.cardBrand = cardBrand
+    }
+}
+

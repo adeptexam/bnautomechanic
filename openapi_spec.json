@@ -1,0 +1,1349 @@
+{
+  "components": {
+    "schemas": {
+      "AuthResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "expires_in": {
+            "example": 900,
+            "type": "integer"
+          },
+          "refresh_token": {
+            "type": "string"
+          },
+          "token_type": {
+            "example": "Bearer",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "type": "object"
+      },
+      "Booking": {
+        "properties": {
+          "amount_paid": {
+            "example": 0.0,
+            "format": "float",
+            "type": "number"
+          },
+          "balance_due": {
+            "example": 189.5,
+            "format": "float",
+            "type": "number"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "example": 101,
+            "type": "integer"
+          },
+          "notes": {
+            "nullable": true,
+            "type": "string"
+          },
+          "payment_status": {
+            "enum": [
+              "PENDING",
+              "PARTIALLY_PAID",
+              "PAID"
+            ],
+            "example": "PENDING",
+            "type": "string"
+          },
+          "scheduled_date": {
+            "example": "2026-11-15",
+            "format": "date",
+            "type": "string"
+          },
+          "scheduled_time": {
+            "example": "10:30",
+            "type": "string"
+          },
+          "services": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "IN_PROGRESS",
+              "ESTIMATE_APPROVED",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "example": "CONFIRMED",
+            "type": "string"
+          },
+          "total_amount": {
+            "example": 189.5,
+            "format": "float",
+            "type": "number"
+          },
+          "user_id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/Vehicle"
+          },
+          "vehicle_id": {
+            "example": 10,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "BookingCreateInput": {
+        "properties": {
+          "notes": {
+            "example": "Slight vibration at 100km/h",
+            "nullable": true,
+            "type": "string"
+          },
+          "scheduled_date": {
+            "example": "2026-11-15",
+            "format": "date",
+            "type": "string"
+          },
+          "scheduled_time": {
+            "example": "10:30",
+            "type": "string"
+          },
+          "services": {
+            "example": [
+              1,
+              3
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/VehicleInput"
+          },
+          "vehicle_id": {
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "scheduled_date",
+          "scheduled_time"
+        ],
+        "type": "object"
+      },
+      "DeviceRegistration": {
+        "properties": {
+          "app_version": {
+            "example": "2.0.0",
+            "nullable": true,
+            "type": "string"
+          },
+          "device_model": {
+            "example": "iPhone 15 Pro Max",
+            "nullable": true,
+            "type": "string"
+          },
+          "device_token": {
+            "example": "fcm_or_apns_device_token_xyz_8872",
+            "type": "string"
+          },
+          "platform": {
+            "enum": [
+              "ios",
+              "android",
+              "web"
+            ],
+            "example": "ios",
+            "type": "string"
+          }
+        },
+        "required": [
+          "device_token",
+          "platform"
+        ],
+        "type": "object"
+      },
+      "ErrorEnvelope": {
+        "properties": {
+          "error": {
+            "properties": {
+              "code": {
+                "example": "VALIDATION_ERROR",
+                "type": "string"
+              },
+              "details": {
+                "nullable": true,
+                "type": "object"
+              },
+              "message": {
+                "example": "The request body failed validation.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ],
+            "type": "object"
+          },
+          "success": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "error"
+        ],
+        "type": "object"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "example": "customer@demo.com",
+            "format": "email",
+            "type": "string"
+          },
+          "password": {
+            "example": "Customer@123",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "properties": {
+          "email": {
+            "example": "newuser@example.com",
+            "format": "email",
+            "type": "string"
+          },
+          "name": {
+            "example": "Alex Taylor",
+            "type": "string"
+          },
+          "password": {
+            "example": "SecurePassword@2026",
+            "format": "password",
+            "type": "string"
+          },
+          "phone": {
+            "example": "+61 400 987 654",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "name"
+        ],
+        "type": "object"
+      },
+      "Service": {
+        "properties": {
+          "category_id": {
+            "example": 2,
+            "type": "integer"
+          },
+          "description": {
+            "type": "string"
+          },
+          "duration_minutes": {
+            "example": 120,
+            "type": "integer"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "is_popular": {
+            "example": true,
+            "type": "boolean"
+          },
+          "name": {
+            "example": "Comprehensive Major Service",
+            "type": "string"
+          },
+          "price": {
+            "example": 249.0,
+            "format": "float",
+            "type": "number"
+          },
+          "slug": {
+            "example": "comprehensive-major-service",
+            "type": "string"
+          },
+          "status": {
+            "example": "active",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "StandardEnvelope": {
+        "properties": {
+          "data": {
+            "type": "object"
+          },
+          "meta": {
+            "properties": {
+              "page": {
+                "example": 1,
+                "type": "integer"
+              },
+              "per_page": {
+                "example": 20,
+                "type": "integer"
+              },
+              "total": {
+                "example": 45,
+                "type": "integer"
+              },
+              "version": {
+                "example": "2.0.0",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "success": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success",
+          "data"
+        ],
+        "type": "object"
+      },
+      "User": {
+        "properties": {
+          "avatar_url": {
+            "example": "/uploads/avatars/user_1.jpg",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "example": "customer@demo.com",
+            "format": "email",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Jordan Miller",
+            "type": "string"
+          },
+          "phone": {
+            "example": "+61 400 123 456",
+            "nullable": true,
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "CUSTOMER",
+              "MECHANIC",
+              "ADMIN",
+              "SUPER_ADMIN",
+              "EDITOR"
+            ],
+            "example": "CUSTOMER",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Vehicle": {
+        "properties": {
+          "color": {
+            "example": "Graphite Grey",
+            "nullable": true,
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fuel_type": {
+            "example": "Petrol",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "example": 10,
+            "type": "integer"
+          },
+          "make": {
+            "example": "Toyota",
+            "nullable": true,
+            "type": "string"
+          },
+          "mileage": {
+            "example": 45200,
+            "nullable": true,
+            "type": "integer"
+          },
+          "model": {
+            "example": "Corolla Ascent",
+            "type": "string"
+          },
+          "notes": {
+            "example": "Regular 10k logbook service",
+            "nullable": true,
+            "type": "string"
+          },
+          "registration_number": {
+            "example": "BN-882-XY",
+            "nullable": true,
+            "type": "string"
+          },
+          "transmission": {
+            "example": "Automatic",
+            "nullable": true,
+            "type": "string"
+          },
+          "user_id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "year": {
+            "example": 2021,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "VehicleInput": {
+        "properties": {
+          "color": {
+            "example": "Graphite Grey",
+            "nullable": true,
+            "type": "string"
+          },
+          "fuel_type": {
+            "example": "Petrol",
+            "nullable": true,
+            "type": "string"
+          },
+          "make": {
+            "example": "Toyota",
+            "nullable": true,
+            "type": "string"
+          },
+          "mileage": {
+            "example": 45200,
+            "nullable": true,
+            "type": "integer"
+          },
+          "model": {
+            "example": "Corolla",
+            "type": "string"
+          },
+          "notes": {
+            "example": "Front brake squeal",
+            "nullable": true,
+            "type": "string"
+          },
+          "registration_number": {
+            "example": "BN-882-XY",
+            "nullable": true,
+            "type": "string"
+          },
+          "transmission": {
+            "example": "Automatic",
+            "nullable": true,
+            "type": "string"
+          },
+          "year": {
+            "example": 2021,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "Enter the JWT access token obtained from `POST /auth/login`",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "support@bnautomechanic.net",
+      "name": "BN Auto Mechanic Support",
+      "url": "https://bnautomechanic.net"
+    },
+    "description": "Official enterprise REST API for **BN Auto Mechanic (BN Automobiles)**. Powers the Web Portal (React / TypeScript), iOS Application (Swift / SwiftUI), and Android Application (Kotlin / Jetpack Compose).\n\n### Key Architectural Features:\n- **Stateless Bearer JWT Authentication** (`HS256`)\n- **Dual-Prefix Support**: Fully accessible via `/api/v2` and `/api/v1`\n- **Standardized Envelope Responses**: `{ \"success\": true, \"data\": ... }`\n- **Mobile-First Design**: Null-safe schemas, standard ISO 8601 UTC timestamps\n- **Push Notifications**: Device token registration for APNs (iOS) & FCM (Android)",
+    "license": {
+      "name": "Proprietary",
+      "url": "https://bnautomechanic.net/terms"
+    },
+    "title": "BN Auto Mechanic REST API",
+    "version": "2.0.0"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "description": "Validates email and password, returning short-lived access token and long-lived refresh token.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AuthResponse"
+                    },
+                    "success": {
+                      "example": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Login successful"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Authenticate user & issue JWT tokens",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Current user profile data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get authenticated user profile",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "refresh_token": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "refresh_token"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "New access and refresh tokens returned"
+          },
+          "401": {
+            "description": "Expired or invalid refresh token"
+          }
+        },
+        "summary": "Rotate tokens using refresh token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Account created successfully"
+          },
+          "400": {
+            "description": "Validation error or email already in use"
+          }
+        },
+        "summary": "Create customer account",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/bookings": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "default": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "per_page",
+            "schema": {
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated booking list"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List bookings for current user",
+        "tags": [
+          "Bookings"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BookingCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Booking scheduled successfully"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create new service booking",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/bookings/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Booking details"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get booking details & items",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/bookings/{id}/extras/{extra_id}/approve": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "extra_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Extra service approved and folded into balance"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Customer approve additional technician quote item",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/bookings/{id}/extras/{extra_id}/decline": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "extra_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Extra service declined"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Customer decline additional technician quote item",
+        "tags": [
+          "Bookings"
+        ]
+      }
+    },
+    "/brands": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Brands list"
+          }
+        },
+        "summary": "List supported vehicle brands & logos",
+        "tags": [
+          "Public"
+        ]
+      }
+    },
+    "/categories": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Categories list"
+          }
+        },
+        "summary": "List service categories",
+        "tags": [
+          "Public"
+        ]
+      }
+    },
+    "/deals": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Deals list"
+          }
+        },
+        "summary": "List active promotional deals & vouchers",
+        "tags": [
+          "Public"
+        ]
+      }
+    },
+    "/devices/register": {
+      "post": {
+        "description": "Registers an iOS APNs device token or Android FCM token to enable push notifications.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "success": {
+                      "example": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Device token recorded"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Register mobile device token (APNs / FCM)",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/devices/{token}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device unregistered successfully"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Unregister mobile device token upon logout",
+        "tags": [
+          "Devices"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "app": {
+                      "example": "BN Auto Mechanic API",
+                      "type": "string"
+                    },
+                    "status": {
+                      "example": "ok",
+                      "type": "string"
+                    },
+                    "version": {
+                      "example": "2.0.0",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "API status"
+          }
+        },
+        "summary": "API Health & Connectivity Status",
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/mechanic/jobs": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Technician job list"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List assigned technician jobs",
+        "tags": [
+          "Mechanic"
+        ]
+      }
+    },
+    "/mechanic/jobs/{id}/claim": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Job claimed"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Claim an available workshop job",
+        "tags": [
+          "Mechanic"
+        ]
+      }
+    },
+    "/services": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "popular",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service catalog listing"
+          }
+        },
+        "summary": "Browse workshop services catalog",
+        "tags": [
+          "Public"
+        ]
+      }
+    },
+    "/users/me": {
+      "delete": {
+        "description": "Allows a customer to permanently delete their own account, saved vehicles, and associated data. Revokes active tokens and closes any sessions.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "description": "Current account password for security confirmation (optional if session is trusted)",
+                    "type": "string"
+                  },
+                  "reason": {
+                    "description": "Optional departure feedback for workshop management",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Account and personal data successfully deleted"
+          },
+          "401": {
+            "description": "Unauthorized or incorrect password"
+          },
+          "403": {
+            "description": "Forbidden for staff administrators"
+          },
+          "409": {
+            "description": "Active vehicle service in progress or outstanding balance on invoice"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete authenticated customer account and personal data (Self-service)",
+        "tags": [
+          "Customer"
+        ]
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Current customer profile data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get authenticated customer profile",
+        "tags": [
+          "Customer"
+        ]
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "Customer profile updated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update authenticated customer profile",
+        "tags": [
+          "Customer"
+        ]
+      }
+    },
+    "/vehicles": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": "@{$ref=#/components/schemas/Vehicle}",
+                      "type": "array"
+                    },
+                    "success": {
+                      "example": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "List of user vehicles"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List customer vehicles in garage",
+        "tags": [
+          "Vehicles"
+        ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Vehicle registered successfully"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Add new vehicle (supports null fields)",
+        "tags": [
+          "Vehicles"
+        ]
+      }
+    },
+    "/vehicles/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vehicle removed"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Delete vehicle from garage",
+        "tags": [
+          "Vehicles"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vehicle details"
+          },
+          "404": {
+            "description": "Vehicle not found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get vehicle details by ID",
+        "tags": [
+          "Vehicles"
+        ]
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Vehicle updated successfully"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Update vehicle fields (supports setting to null)",
+        "tags": [
+          "Vehicles"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "Production Server (v2.0.0 Primary)",
+      "url": "https://api.bnautomechanic.net/api/v2"
+    },
+    {
+      "description": "Production Server (v1 Legacy Fallback)",
+      "url": "https://api.bnautomechanic.net/api/v1"
+    },
+    {
+      "description": "Local Development (v2.0.0)",
+      "url": "http://127.0.0.1:5001/api/v2"
+    },
+    {
+      "description": "Local Development (v1)",
+      "url": "http://127.0.0.1:5001/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Authentication, JWT token issuance, session refresh, and passwords",
+      "name": "Auth"
+    },
+    {
+      "description": "Public workshop catalog: services, categories, brands, deals, reviews",
+      "name": "Public"
+    },
+    {
+      "description": "Customer & workshop vehicle garage management",
+      "name": "Vehicles"
+    },
+    {
+      "description": "Appointment lifecycle: scheduling, quotes, approval, and extra work items",
+      "name": "Bookings"
+    },
+    {
+      "description": "Financial invoices, counter transactions, card/Square processing",
+      "name": "Invoices & Payments"
+    },
+    {
+      "description": "Technician job dispatch, live claim board, inspection status progression",
+      "name": "Mechanic"
+    },
+    {
+      "description": "Mobile device push notification registration (APNs for iOS, FCM for Android)",
+      "name": "Devices"
+    },
+    {
+      "description": "Customer and staff inbox notifications and status updates",
+      "name": "Notifications"
+    },
+    {
+      "description": "Real-time customer-to-workshop support messaging",
+      "name": "Live Chat"
+    },
+    {
+      "description": "Superadmin workshop configuration, employee scheduling, roles & permissions",
+      "name": "Admin"
+    },
+    {
+      "description": "Health checks, system diagnostics, and workshop operational status",
+      "name": "System"
+    }
+  ]
+}

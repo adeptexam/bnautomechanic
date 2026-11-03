@@ -149,6 +149,12 @@ struct InvoicesView: View {
 struct InvoiceDetailView: View {
     let invoice: Invoice
     @Environment(\.dismiss) var dismiss
+    @State private var showPaymentSheet: Bool = false
+    @State private var isPaidLocally: Bool = false
+
+    private var currentStatus: String {
+        isPaidLocally ? "PAID" : (invoice.status ?? "PAID")
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -193,7 +199,7 @@ struct InvoiceDetailView: View {
                                 .foregroundColor(.textMuted)
                         }
 
-                        let status = invoice.status ?? "PAID"
+                        let status = currentStatus
                         Text(status)
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(status == "PAID" ? .statusCompleted : .statusPending)
@@ -245,6 +251,22 @@ struct InvoiceDetailView: View {
                                 .font(.system(size: 18, weight: .black))
                                 .foregroundColor(.primaryGold)
                         }
+
+                        if currentStatus != "PAID" {
+                            Button(action: { showPaymentSheet = true }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "creditcard.fill")
+                                    Text("Pay Invoice Balance (\(String(format: "$%.2f", invoice.total ?? 0)))")
+                                }
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.bgDark)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(Color.primaryGold)
+                                .cornerRadius(8)
+                            }
+                            .padding(.top, 6)
+                        }
                     }
                     .padding(16)
                     .luxuryCard()
@@ -271,5 +293,10 @@ struct InvoiceDetailView: View {
         .toolbar(.hidden, for: .navigationBar)
         #endif
         .hideBottomDockOnPush()
+        .sheet(isPresented: $showPaymentSheet) {
+            PaymentGatewaySheet(invoice: invoice, onPaymentCompleted: {
+                isPaidLocally = true
+            })
+        }
     }
 }

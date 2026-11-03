@@ -103,6 +103,18 @@ struct InfoPageView: View {
                 title: "CANCELLATION POLICY",
                 body: "Appointments may be rescheduled or cancelled up to 2 hours prior to scheduled bay arrival without any cancellation fee."
             )
+
+            // Clause 5 - Guideline 1.2
+            termClause(
+                title: "COMMUNITY GUIDELINES & CONTENT MODERATION",
+                body: "BN Auto Mechanic strictly prohibits abusive, defamatory, harassing, or objectionable user content. Users can report inappropriate reviews or block disruptive individuals at any time. Reported content is removed within 24 hours upon staff review."
+            )
+
+            // Clause 6 - Guideline 5.1.1(v)
+            termClause(
+                title: "ACCOUNT DELETION & DATA PRIVACY",
+                body: "Customers retain full control over their personal data. You may permanently delete your account, saved vehicles, and associated profile information at any time directly within the Profile Settings section of the app."
+            )
         }
     }
 
