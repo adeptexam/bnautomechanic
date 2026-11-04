@@ -1383,6 +1383,23 @@ struct CreateBookingRequest: Codable {
         case couponCode = "coupon_code"
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let ids = try? container.decode([Int].self, forKey: .serviceIds) {
+            self.serviceIds = ids
+        } else if let ids = try? container.decode([Int].self, forKey: .services) {
+            self.serviceIds = ids
+        } else {
+            self.serviceIds = []
+        }
+        self.vehicleId = try? container.decodeIfPresent(Int.self, forKey: .vehicleId)
+        self.vehicle = try? container.decodeIfPresent(CreateVehicleRequest.self, forKey: .vehicle)
+        self.scheduledDate = (try? container.decode(String.self, forKey: .scheduledDate)) ?? ""
+        self.scheduledTime = (try? container.decode(String.self, forKey: .scheduledTime)) ?? ""
+        self.notes = try? container.decodeIfPresent(String.self, forKey: .notes)
+        self.couponCode = try? container.decodeIfPresent(String.self, forKey: .couponCode)
+    }
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(serviceIds, forKey: .serviceIds)
