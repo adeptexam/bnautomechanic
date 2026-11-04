@@ -136,6 +136,18 @@ struct InfoPageView: View {
                 Text("Specialized domestic and European automotive mechanics serving Ewing and greater Mercer County with master certified technicians.")
                     .font(.system(size: 13))
                     .foregroundColor(.textMuted)
+
+                HStack(spacing: 8) {
+                    Text("iOS App Version 2.0 (Build 2)")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.primaryGold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color.primaryGoldTint)
+                        .cornerRadius(6)
+                    Spacer()
+                }
+                .padding(.top, 4)
             }
             .padding(16)
             .luxuryCard()

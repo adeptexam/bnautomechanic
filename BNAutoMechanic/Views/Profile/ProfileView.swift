@@ -228,6 +228,20 @@ struct ProfileView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 24)
+
+                // Version 2.0 Footer
+                VStack(spacing: 4) {
+                    Text("BN Auto Mechanic v2.0 (Build 2)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.textMuted)
+
+                    Text("Engineered for iOS 16+ • Swift 5.9 Concurrency")
+                        .font(.system(size: 10))
+                        .foregroundColor(.textSubtle)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
                 .bottomDockClearance()
             }
         }
