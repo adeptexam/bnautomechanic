@@ -18,6 +18,7 @@ extension Color {
     // Surfaces & Backgrounds
     static let bgDark = Color(hex: "050607")
     static let surfaceDark = Color(hex: "0B0D11")
+    static let inputDarkBg = Color(hex: "0B0D11")
     static let cardDark = Color(hex: "0F1117")
     static let cardDarkElevated = Color(hex: "161922")
     static let cardDarkHover = Color(hex: "1D212C")

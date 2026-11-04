@@ -535,6 +535,11 @@ class APIService {
         return try await makeRequest(endpoint: "payments", queryParams: ["per_page": "\(perPage)"])
     }
 
+    // MARK: - Record / Process Payment (Apple Guideline 3.1.5(a))
+    func recordPayment(_ req: PaymentProcessRequest) async throws -> ApiResponse<Payment> {
+        return try await makeRequest(endpoint: "payments", method: "POST", body: req)
+    }
+
     // MARK: - Reviews (reviews table)
     func getReviews(perPage: Int = 30) async throws -> ApiResponse<Paginated<Review>> {
         return try await makeRequest(endpoint: "reviews", queryParams: ["per_page": "\(perPage)"])

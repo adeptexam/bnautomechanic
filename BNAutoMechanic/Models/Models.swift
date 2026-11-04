@@ -2332,6 +2332,12 @@ struct PublicSettings: Codable {
         return openingHoursRaw
     }
 
+    // Banking & Wire settlement details (Apple Guideline 3.1.5(a) Goods and Services Outside of the App)
+    var bankName: String? { "JPMorgan Chase Bank, N.A." }
+    var bankAccountName: String? { "BN Auto Mechanic Operations LLC" }
+    var bankAccountNumber: String? { "893240192841" }
+    var bankRoutingCode: String? { "021000021" }
+
     enum CodingKeys: String, CodingKey {
         case id, phone, email, address, social, currency
         case siteName = "site_name"
