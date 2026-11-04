@@ -27,10 +27,20 @@ struct BookAppointmentView: View {
     @State private var allServices: [Service] = []
     @State private var selectedServiceIds: Set<Int> = []
 
-    // Step 3: Date & Time
-    @State private var selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-    @State private var selectedTimeSlot = "10:00 AM"
-    private let timeSlots = ["8:00 AM", "10:00 AM", "1:00 PM", "3:00 PM", "5:00 PM"]
+    // Step 3: Date & Time (Real-Time Backend Bay Slot Sync)
+    @State private var selectedDate: Date = {
+        let calendar = Calendar.current
+        var target = calendar.date(byAdding: .day, value: 1, to: Date()) ?? Date()
+        if calendar.component(.weekday, from: target) == 1 { // Skip Sunday default
+            target = calendar.date(byAdding: .day, value: 1, to: target) ?? target
+        }
+        return target
+    }()
+    @State private var selectedSlot: AvailabilitySlot? = nil
+    @State private var availabilitySlots: [AvailabilitySlot] = []
+    @State private var isLoadingSlots: Bool = false
+    @State private var availabilityError: String? = nil
+    @State private var isWorkshopClosedOnDate: Bool = false
 
     // Step 4: Notes & Promo
     @State private var notes = ""
@@ -341,40 +351,234 @@ struct BookAppointmentView: View {
         }
     }
 
-    // MARK: - Step 3: Date & Time
+    // MARK: - Step 3: Date & Time (Real-Time Backend Bay Slot Sync)
     private var step3DateTimeView: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Choose Appointment Date")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.textForeground)
+        VStack(alignment: .leading, spacing: 18) {
+            // Header
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Choose Appointment Date")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.textForeground)
 
+                Text("Select your preferred service date to check live bay availability at our Ewing workshop.")
+                    .font(.system(size: 12))
+                    .foregroundColor(.textMuted)
+            }
+
+            // Calendar Picker
             DatePicker("Scheduled Date", selection: $selectedDate, in: Date()..., displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .accentColor(.primaryGold)
                 .padding(10)
                 .luxuryCard()
-
-            Text("Select Arrival Slot")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.textForeground)
-                .padding(.top, 8)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(timeSlots, id: \.self) { slot in
-                    Button(action: { selectedTimeSlot = slot }) {
-                        Text(slot)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(selectedTimeSlot == slot ? .bgDark : .textForeground)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 42)
-                            .background(selectedTimeSlot == slot ? Color.primaryGold : Color.cardDark)
-                            .cornerRadius(8)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(selectedTimeSlot == slot ? Color.primaryGold : Color.borderSubtle, lineWidth: 1)
-                            )
+                .onChange(of: selectedDate) { newDate in
+                    Task {
+                        await loadAvailability(for: newDate)
                     }
                 }
+
+            // Arrival Slot Header with live sync indicator
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Select Arrival Slot")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.textForeground)
+
+                    Text(formattedSelectedDateHeader)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.primaryGold)
+                }
+
+                Spacer()
+
+                if isLoadingSlots {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .primaryGold))
+                            .scaleEffect(0.7)
+                        Text("Syncing bays...")
+                            .font(.system(size: 11))
+                            .foregroundColor(.textMuted)
+                    }
+                } else if !isWorkshopClosedOnDate {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(Color.statusCompleted)
+                            .frame(width: 6, height: 6)
+                        Text("Live Bay Capacity")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.statusCompleted)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.statusCompleted.opacity(0.12))
+                    .cornerRadius(6)
+                }
+            }
+            .padding(.top, 4)
+
+            // Dynamic Slot States
+            if isLoadingSlots && availabilitySlots.isEmpty {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .primaryGold))
+                    Text("Checking workshop bay availability with server...")
+                        .font(.system(size: 12))
+                        .foregroundColor(.textMuted)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 28)
+                .luxuryCard()
+            } else if isWorkshopClosedOnDate {
+                workshopClosedBanner
+            } else {
+                slotsGridView
+            }
+
+            if let err = availabilityError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.primaryGold)
+                    Text(err)
+                        .font(.system(size: 11))
+                        .foregroundColor(.textMuted)
+                    Spacer()
+                    Button("Retry") {
+                        Task { await loadAvailability(for: selectedDate) }
+                    }
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.primaryGold)
+                }
+                .padding(10)
+                .background(Color.cardDarkElevated)
+                .cornerRadius(8)
+            }
+        }
+    }
+
+    // MARK: - Workshop Closed or Fully Booked Card
+    private var workshopClosedBanner: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "calendar.badge.clock")
+                .font(.system(size: 38))
+                .foregroundColor(.primaryGold)
+
+            Text("No Arrival Slots Available")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.textForeground)
+
+            let isSunday = Calendar.current.component(.weekday, from: selectedDate) == 1
+            Text(isSunday
+                 ? "Our workshop bays are closed on Sundays for scheduled repairs. Emergency 24/7 towing remains available."
+                 : "All technician bays are at maximum capacity on this date. Please select another date from the calendar.")
+                .font(.system(size: 12))
+                .foregroundColor(.textMuted)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+
+            Button(action: jumpToNextOpenWeekday) {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.forward.circle.fill")
+                        .font(.system(size: 13))
+                    Text("Jump to Next Available Day")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundColor(.bgDark)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.primaryGold)
+                .cornerRadius(8)
+            }
+            .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .luxuryCard()
+    }
+
+    // MARK: - Live Slots Grid
+    private var slotsGridView: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            ForEach(availabilitySlots) { slot in
+                let isBookable = slot.isBookable(on: selectedDate)
+                let isSelected = selectedSlot?.time == slot.time
+
+                Button(action: {
+                    if isBookable {
+                        selectedSlot = slot
+                        errorMessage = ""
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(slot.displayTime)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(
+                                    !isBookable
+                                        ? Color.textSubtle
+                                        : (isSelected ? Color.bgDark : Color.textForeground)
+                                )
+
+                            HStack(spacing: 4) {
+                                if !isBookable {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 8))
+                                    Text(slot.isPastTime(on: selectedDate) ? "Passed" : "Fully Booked")
+                                        .font(.system(size: 9, weight: .medium))
+                                } else if let rem = slot.remaining, rem == 1 {
+                                    Circle()
+                                        .fill(isSelected ? Color.bgDark : Color.primaryGold)
+                                        .frame(width: 5, height: 5)
+                                    Text("1 bay left")
+                                        .font(.system(size: 9, weight: .bold))
+                                } else {
+                                    Circle()
+                                        .fill(isSelected ? Color.bgDark : Color.statusCompleted)
+                                        .frame(width: 5, height: 5)
+                                    Text("\(slot.remaining ?? 3) bays open")
+                                        .font(.system(size: 9))
+                                }
+                            }
+                            .foregroundColor(
+                                !isBookable
+                                    ? Color.textSubtle.opacity(0.8)
+                                    : (isSelected ? Color.bgDark.opacity(0.85) : (slot.remaining == 1 ? Color.primaryGold : Color.statusCompleted))
+                            )
+                        }
+
+                        Spacer()
+
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.bgDark)
+                        } else if !isBookable {
+                            Image(systemName: "nosign")
+                                .font(.system(size: 13))
+                                .foregroundColor(.textSubtle.opacity(0.5))
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        !isBookable
+                            ? Color.cardDark.opacity(0.4)
+                            : (isSelected ? Color.primaryGold : Color.cardDarkElevated)
+                    )
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(
+                                !isBookable
+                                    ? Color.borderSubtle.opacity(0.3)
+                                    : (isSelected ? Color.primaryGold : Color.borderSubtle),
+                                lineWidth: isSelected ? 1.5 : 1
+                            )
+                    )
+                }
+                .disabled(!isBookable)
             }
         }
     }
@@ -440,15 +644,33 @@ struct BookAppointmentView: View {
 
             // Date / Time summary
             VStack(alignment: .leading, spacing: 8) {
-                Label("APPOINTMENT TIME", systemImage: "calendar")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.primaryGold)
+                HStack {
+                    Label("APPOINTMENT TIME", systemImage: "calendar")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.primaryGold)
+
+                    Spacer()
+
+                    if let slot = selectedSlot {
+                        Text(slot.statusBadgeText)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.statusCompleted)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2)
+                            .background(Color.statusCompleted.opacity(0.12))
+                            .cornerRadius(4)
+                    }
+                }
 
                 let formatter = DateFormatter()
                 let _ = { formatter.dateStyle = .medium }()
-                Text("\(formatter.string(from: selectedDate))  •  \(selectedTimeSlot)")
+                Text("\(formatter.string(from: selectedDate))  •  \(selectedSlot?.displayTime ?? "Select Slot")")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(.textForeground)
+
+                Text("Bay Arrival Window: \(selectedSlot?.time ?? "--:--") (1200 Parkway Ave, Ewing NJ)")
+                    .font(.system(size: 11))
+                    .foregroundColor(.textMuted)
             }
             .padding(14)
             .luxuryCard()
@@ -559,9 +781,18 @@ struct BookAppointmentView: View {
                 errorMessage = "Please select at least one service."
                 return
             }
+            Task { await loadAvailability(for: selectedDate) }
             withAnimation { currentStep = 3 }
 
         case 3:
+            if isWorkshopClosedOnDate {
+                errorMessage = "The workshop is closed or fully booked on this date. Please pick another date above."
+                return
+            }
+            guard let slot = selectedSlot, slot.isBookable(on: selectedDate) else {
+                errorMessage = "Please select an available workshop arrival slot."
+                return
+            }
             withAnimation { currentStep = 4 }
 
         case 4:
@@ -575,11 +806,17 @@ struct BookAppointmentView: View {
     }
 
     private func submitBooking() {
+        guard let slot = selectedSlot else {
+            errorMessage = "Please select an available workshop arrival slot."
+            return
+        }
+
         isSubmitting = true
         errorMessage = ""
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         let dateString = formatter.string(from: selectedDate)
 
         let vehicleReq = selectedVehicleId == nil ? CreateVehicleRequest(
@@ -595,7 +832,7 @@ struct BookAppointmentView: View {
             vehicleId: selectedVehicleId,
             vehicle: vehicleReq,
             scheduledDate: dateString,
-            scheduledTime: selectedTimeSlot,
+            scheduledTime: slot.time, // Exact 24-hr format synchronized with backend (e.g. "08:30", "10:30")
             notes: notes.trimmingCharacters(in: .whitespaces).isEmpty ? nil : notes.trimmingCharacters(in: .whitespaces),
             couponCode: couponCode.trimmingCharacters(in: .whitespaces).isEmpty ? nil : couponCode.trimmingCharacters(in: .whitespaces)
         )
@@ -649,6 +886,107 @@ struct BookAppointmentView: View {
                 }
             }
         }
+
+        // Live availability for default selected date
+        await loadAvailability(for: selectedDate)
+
         await MainActor.run { isLoading = false }
+    }
+
+    // MARK: - Backend Slot Availability Sync (GET /bookings/availability?date=YYYY-MM-DD)
+    private func loadAvailability(for date: Date) async {
+        await MainActor.run {
+            isLoadingSlots = true
+            availabilityError = nil
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let dateString = formatter.string(from: date)
+
+        let isSunday = Calendar.current.component(.weekday, from: date) == 1
+
+        do {
+            let resp = try await APIService.shared.getAvailability(
+                date: dateString,
+                serviceId: selectedServiceIds.first
+            )
+
+            await MainActor.run {
+                isLoadingSlots = false
+                if let avail = resp.data {
+                    let fetchedSlots = avail.allSlots
+                    if fetchedSlots.isEmpty {
+                        useFallbackSlots(for: date, isSunday: isSunday)
+                    } else {
+                        self.availabilitySlots = fetchedSlots
+                        self.isWorkshopClosedOnDate = isSunday || fetchedSlots.allSatisfy { !$0.isBookable(on: date) }
+                        reconcileSelectedSlot(for: date)
+                    }
+                } else {
+                    useFallbackSlots(for: date, isSunday: isSunday)
+                }
+            }
+        } catch {
+            await MainActor.run {
+                isLoadingSlots = false
+                availabilityError = "Could not reach live schedule. Standard slots loaded."
+                useFallbackSlots(for: date, isSunday: isSunday)
+            }
+        }
+    }
+
+    private func useFallbackSlots(for date: Date, isSunday: Bool) {
+        let standardTimes = ["08:30", "09:30", "10:30", "11:30", "13:00", "14:00", "15:00", "16:00"]
+        let slots = standardTimes.map { time in
+            AvailabilitySlot(
+                time: time,
+                available: !isSunday,
+                remaining: isSunday ? 0 : 3
+            )
+        }
+        self.availabilitySlots = slots
+        self.isWorkshopClosedOnDate = isSunday || slots.allSatisfy { !$0.isBookable(on: date) }
+        reconcileSelectedSlot(for: date)
+    }
+
+    private func reconcileSelectedSlot(for date: Date) {
+        // If currently chosen slot is still available, keep it
+        if let current = selectedSlot,
+           let updated = availabilitySlots.first(where: { $0.time == current.time }),
+           updated.isBookable(on: date) {
+            selectedSlot = updated
+            return
+        }
+
+        // Auto-select the first bookable slot for convenience
+        if let first = availabilitySlots.first(where: { $0.isBookable(on: date) }) {
+            selectedSlot = first
+        } else {
+            selectedSlot = nil
+        }
+    }
+
+    private func jumpToNextOpenWeekday() {
+        var nextDate = selectedDate
+        let calendar = Calendar.current
+        for _ in 1...7 {
+            if let candidate = calendar.date(byAdding: .day, value: 1, to: nextDate) {
+                let weekday = calendar.component(.weekday, from: candidate)
+                if weekday != 1 { // Not Sunday
+                    selectedDate = candidate
+                    Task { await loadAvailability(for: candidate) }
+                    break
+                }
+                nextDate = candidate
+            }
+        }
+    }
+
+    private var formattedSelectedDateHeader: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d, yyyy"
+        return formatter.string(from: selectedDate)
     }
 }

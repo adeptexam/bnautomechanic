@@ -1376,22 +1376,131 @@ struct CreateBookingRequest: Codable {
     enum CodingKeys: String, CodingKey {
         case vehicle, notes
         case serviceIds = "service_ids"
+        case services
         case vehicleId = "vehicle_id"
         case scheduledDate = "scheduled_date"
         case scheduledTime = "scheduled_time"
         case couponCode = "coupon_code"
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(serviceIds, forKey: .serviceIds)
+        try container.encode(serviceIds, forKey: .services)
+        try container.encodeIfPresent(vehicleId, forKey: .vehicleId)
+        try container.encodeIfPresent(vehicle, forKey: .vehicle)
+        try container.encode(scheduledDate, forKey: .scheduledDate)
+        try container.encode(scheduledTime, forKey: .scheduledTime)
+        try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(couponCode, forKey: .couponCode)
+    }
+}
+
+// MARK: - Availability Slot Model (Backend API sync: GET /bookings/availability?date=YYYY-MM-DD)
+struct AvailabilitySlot: Codable, Identifiable, Hashable {
+    var id: String { time }
+    let time: String           // e.g. "08:30", "13:00"
+    let available: Bool        // true if workshop bay capacity open
+    let remaining: Int?        // remaining bays open, e.g. 3, 2, 1, 0
+
+    enum CodingKeys: String, CodingKey {
+        case time, available, remaining
+    }
+
+    init(time: String, available: Bool, remaining: Int? = nil) {
+        self.time = time
+        self.available = available
+        self.remaining = remaining
+    }
+
+    /// User-friendly display format (e.g. "08:30" -> "8:30 AM", "13:00" -> "1:00 PM")
+    var displayTime: String {
+        let parts = time.split(separator: ":")
+        guard parts.count >= 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]) else {
+            return time
+        }
+        let ampm = hour >= 12 ? "PM" : "AM"
+        let displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour)
+        return String(format: "%d:%02d %@", displayHour, minute, ampm)
+    }
+
+    /// Status badge text (e.g. "3 bays open", "1 bay left", "Fully Booked")
+    var statusBadgeText: String {
+        if !available || (remaining ?? 0) <= 0 {
+            return "Fully Booked"
+        }
+        if let rem = remaining {
+            if rem == 1 {
+                return "1 bay left"
+            } else {
+                return "\(rem) bays open"
+            }
+        }
+        return "Available"
+    }
+
+    /// Checks if this slot has already passed if selected date is today
+    func isPastTime(on date: Date) -> Bool {
+        let calendar = Calendar.current
+        if !calendar.isDateInToday(date) {
+            return false
+        }
+        let parts = time.split(separator: ":")
+        guard parts.count >= 2,
+              let hour = Int(parts[0]),
+              let minute = Int(parts[1]) else {
+            return false
+        }
+        let nowComponents = calendar.dateComponents([.hour, .minute], from: Date())
+        let nowHour = nowComponents.hour ?? 0
+        let nowMinute = nowComponents.minute ?? 0
+        if hour < nowHour {
+            return true
+        } else if hour == nowHour && minute <= nowMinute {
+            return true
+        }
+        return false
+    }
+
+    /// Whether this slot can actually be booked by the customer right now
+    func isBookable(on date: Date) -> Bool {
+        return available && (remaining ?? 1) > 0 && !isPastTime(on: date)
+    }
 }
 
 struct Availability: Codable {
     let date: String?
+    let slots: [AvailabilitySlot]?
     let availableSlots: [String]?
     let isOpen: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case date
+        case date, slots
         case availableSlots = "available_slots"
         case isOpen = "is_open"
+    }
+
+    /// All slots normalized from either structured slots or legacy string arrays
+    var allSlots: [AvailabilitySlot] {
+        if let s = slots, !s.isEmpty {
+            return s
+        }
+        if let strings = availableSlots {
+            return strings.map { AvailabilitySlot(time: $0, available: true, remaining: 1) }
+        }
+        return []
+    }
+
+    /// Filtered bookable slots for a specific date
+    func bookableSlots(on date: Date) -> [AvailabilitySlot] {
+        allSlots.filter { $0.isBookable(on: date) }
+    }
+
+    /// Whether the workshop has at least one open bay on this date
+    func hasOpenSlots(on date: Date) -> Bool {
+        return !bookableSlots(on: date).isEmpty
     }
 }
 

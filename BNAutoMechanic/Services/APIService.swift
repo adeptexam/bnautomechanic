@@ -407,8 +407,13 @@ class APIService {
         return try await makeRequest(endpoint: "bookings/\(bookingId)/extras/\(extraId)/decline", method: "POST")
     }
 
-    func getAvailability(date: String) async throws -> ApiResponse<Availability> {
-        return try await makeRequest(endpoint: "bookings/availability", queryParams: ["date": date])
+    // MARK: - Bay & Arrival Slot Availability (GET /bookings/availability?date=YYYY-MM-DD)
+    func getAvailability(date: String, serviceId: Int? = nil) async throws -> ApiResponse<Availability> {
+        var queryParams: [String: String] = ["date": date]
+        if let sid = serviceId {
+            queryParams["service_id"] = "\(sid)"
+        }
+        return try await makeRequest(endpoint: "bookings/availability", queryParams: queryParams)
     }
 
     func trackBooking(reference: String, phone: String) async throws -> ApiResponse<BookingTrack> {
